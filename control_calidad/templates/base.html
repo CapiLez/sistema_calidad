@@ -1,0 +1,39 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}SIGCS · Calidad & Seguridad{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">SIGCS</div>
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">Proyectos</a>
+      <a href="#">Órdenes de trabajo</a>
+      <a href="#">Inspecciones</a>
+      <a href="#">NCR</a>
+      <a href="#">Documentos</a>
+      <a href="#">Auditorías</a>
+      <a href="#">Equipos</a>
+      <a href="#">SSMA</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <header class="topbar">
+      <div class="title">{% block header %}Panel{% endblock %}</div>
+      <div class="user">
+        <div class="avatar">QC</div>
+        <span class="name">Gerente de Calidad</span>
+      </div>
+    </header>
+    <section class="container">
+      {% block content %}{% endblock %}
+    </section>
+    <footer class="footer">© {{ now|default:"2025" }} SIGCS</footer>
+  </main>
+</body>
+</html>

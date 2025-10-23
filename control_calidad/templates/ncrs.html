@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}No Conformidades · SIGCS{% endblock %}
+{% block header %}No Conformidades (NCR){% endblock %}
+{% block content %}
+<div class="card">
+  <div class="toolbar">
+    <select class="input">
+      <option>Estado: Todas</option><option>ABIERTA</option><option>EN ANÁLISIS</option><option>EN ACCIÓN</option><option>CERRADA</option>
+    </select>
+    <input class="input" placeholder="Buscar código o descripción…">
+    <button class="btn">Nueva NCR</button>
+  </div>
+  <table class="table">
+    <thead><tr><th>Código</th><th>Origen</th><th>Severidad</th><th>Responsable</th><th>Estado</th></tr></thead>
+    <tbody>
+      <tr><td>NCR-2025-031</td><td>INSPECCIÓN</td><td>Alta</td><td>M. López</td><td><span class="pill">EN ACCIÓN</span></td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}
