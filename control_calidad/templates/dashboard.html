@@ -1,49 +1,42 @@
 {% extends "base.html" %}
-{% block title %}Dashboard · SIGCS{% endblock %}
-{% block header %}Dashboard en tiempo real{% endblock %}
+
+{% block title %}Dashboard | SIGCS{% endblock %}
+
 {% block content %}
-<div class="grid">
-  <div class="card kpi">
-    <h3>Índice de NCR</h3>
-    <p class="kpi-number">3.2%</p>
-    <p class="kpi-sub">Últimos 30 días</p>
-  </div>
-  <div class="card kpi">
-    <h3>OT Completadas</h3>
-    <p class="kpi-number">128</p>
-    <p class="kpi-sub">Este mes</p>
-  </div>
-  <div class="card kpi">
-    <h3>Checklists Pendientes</h3>
-    <p class="kpi-number">24</p>
-    <p class="kpi-sub">En curso</p>
-  </div>
-  <div class="card kpi">
-    <h3>Auditorías</h3>
-    <p class="kpi-number">2</p>
-    <p class="kpi-sub">Semana actual</p>
-  </div>
+
+<div class="dashboard-grid">
+
+    <div class="card indicator-card success">
+        <h3>Índice de Cumplimiento Global</h3>
+        <div class="value">94%</div>
+        <small>Meta: 95%</small>
+    </div>
+
+    <div class="card indicator-card warning">
+        <h3>Factor de Incidentes</h3>
+        <div class="value">2.4</div>
+        <small>Meta: &lt; 2.0</small>
+    </div>
+
+    <div class="card indicator-card">
+        <h3>Tiempo de Respuesta Promedio</h3>
+        <div class="value">3.2 h</div>
+    </div>
+
+    <div class="card indicator-card critical">
+        <h3>Hallazgos Críticos</h3>
+        <div class="value">12</div>
+    </div>
+
 </div>
 
-<div class="grid two">
-  <div class="card">
-    <h3>Inspecciones recientes</h3>
-    <table class="table">
-      <thead><tr><th>Fecha</th><th>OT</th><th>Checklist</th><th>Resultado</th></tr></thead>
-      <tbody>
-        <tr><td>2025-10-12</td><td>OT-00045</td><td>Soldadura</td><td><span class="badge ok">APROBADO</span></td></tr>
-        <tr><td>2025-10-12</td><td>OT-00046</td><td>Altura</td><td><span class="badge warn">COND.</span></td></tr>
-        <tr><td>2025-10-11</td><td>OT-00040</td><td>Ensamble</td><td><span class="badge bad">RECHAZADO</span></td></tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="card">
-    <h3>NCR abiertas</h3>
-    <ul class="list">
-      <li><b>NCR-2025-031</b> · Fisura en cordón · <span class="pill">EN ACCIÓN</span></li>
-      <li><b>NCR-2025-029</b> · Dimensión fuera de tol. · <span class="pill">ANÁLISIS</span></li>
-      <li><b>NCR-2025-027</b> · Certificado faltante · <span class="pill">ABIERTA</span></li>
+<div class="card" style="margin-top:20px">
+    <h3>Alertas del Sistema</h3>
+    <ul>
+        <li>2 Hallazgos pendientes de cierre</li>
+        <li>Proceso “Distribución” interrumpido</li>
+        <li>3 Incidentes sin causa raíz</li>
     </ul>
-  </div>
 </div>
+
 {% endblock %}

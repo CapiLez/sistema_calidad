@@ -1,39 +1,68 @@
 {% load static %}
-<!doctype html>
-<html lang="es">
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
 <head>
-  <meta charset="utf-8">
-  <title>{% block title %}SIGCS · Calidad & Seguridad{% endblock %}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+    <meta charset="utf-8">
+    <title>{% block title %}SIGCS{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- CSS general -->
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
+
 <body>
-  <aside class="sidebar">
-    <div class="brand">SIGCS</div>
-    <nav>
-      <a href="#">Dashboard</a>
-      <a href="#">Proyectos</a>
-      <a href="#">Órdenes de trabajo</a>
-      <a href="#">Inspecciones</a>
-      <a href="#">NCR</a>
-      <a href="#">Documentos</a>
-      <a href="#">Auditorías</a>
-      <a href="#">Equipos</a>
-      <a href="#">SSMA</a>
-    </nav>
-  </aside>
-  <main class="content">
-    <header class="topbar">
-      <div class="title">{% block header %}Panel{% endblock %}</div>
-      <div class="user">
-        <div class="avatar">QC</div>
-        <span class="name">Gerente de Calidad</span>
-      </div>
-    </header>
-    <section class="container">
-      {% block content %}{% endblock %}
+<div class="app">
+
+    <!-- Sidebar -->
+    <aside>
+        <div class="brand">
+            <span class="dot"></span>
+            SIGCS <span class="badge">v3.0</span>
+        </div>
+
+        <nav>
+            <a href="{% url 'dashboard' %}" class="active">📊 Dashboard</a>
+            <a href="#">🏗️ Avance de Obra</a>
+            <a href="#">📈 Indicadores</a>
+            <a href="#">🔍 Hallazgos</a>
+            <a href="#">📋 Auditorías</a>
+            <a href="#">⚠️ Incidentes</a>
+            <a href="#">🎯 Competencias</a>
+            <a href="#">👥 Usuarios</a>
+            <a href="#">🔐 Permisos</a>
+            <a href="#">⚙️ Configuración</a>
+        </nav>
+
+        <button class="btn">🌗 Tema</button>
+    </aside>
+
+    <!-- Contenido -->
+    <section>
+
+        <!-- Header -->
+        <header>
+            <div class="search">
+                <span>🔎</span>
+                <input type="text" placeholder="Buscar en SIGCS…">
+            </div>
+
+            <button class="btn">➕ Nuevo</button>
+            <button class="btn info">📊 Reporte</button>
+            <button class="btn warn">🔔 Notificaciones</button>
+
+            <div class="user-info">
+                Usuario: <strong>Responsable SGI</strong>
+            </div>
+        </header>
+
+        <!-- Main -->
+        <main>
+            {% block content %}
+            {% endblock %}
+        </main>
+
     </section>
-    <footer class="footer">© {{ now|default:"2025" }} SIGCS</footer>
-  </main>
+
+</div>
 </body>
 </html>
