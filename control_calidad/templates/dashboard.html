@@ -1,42 +1,102 @@
 {% extends "base.html" %}
 
 {% block title %}Dashboard | SIGCS{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
 
 {% block content %}
 
 <div class="dashboard-grid">
 
-    <div class="card indicator-card success">
+  <!-- Índice de Cumplimiento -->
+  <div class="card indicator-card success">
+    <div class="kpi">
+      <div>✅</div>
+      <div style="flex:1">
         <h3>Índice de Cumplimiento Global</h3>
-        <div class="value">94%</div>
-        <small>Meta: 95%</small>
+        <div class="v">{{ cumplimiento_global }}%</div>
+        <div class="bar" style="margin-top:8px">
+          <i data-bar="{{ cumplimiento_bar }}"></i>
+        </div>
+      </div>
     </div>
+    <div class="muted" style="font-size:12px; margin-top:8px">
+      Meta: {{ cumplimiento_meta }}%
+    </div>
+  </div>
 
-    <div class="card indicator-card warning">
+  <!-- Factor de Incidentes -->
+  <div class="card indicator-card {% if factor_incidentes <= factor_meta %}success{% else %}warning{% endif %}">
+    <div class="kpi">
+      <div>⚠️</div>
+      <div style="flex:1">
         <h3>Factor de Incidentes</h3>
-        <div class="value">2.4</div>
-        <small>Meta: &lt; 2.0</small>
+        <div class="v">{{ factor_incidentes }}</div>
+        <div class="bar" style="margin-top:8px">
+          <i data-bar="{{ factor_bar }}" style="background:var(--warn)"></i>
+        </div>
+      </div>
     </div>
-
-    <div class="card indicator-card">
-        <h3>Tiempo de Respuesta Promedio</h3>
-        <div class="value">3.2 h</div>
+    <div class="muted" style="font-size:12px; margin-top:8px">
+      Fórmula: (Incidentes / HH) × 1M<br>
+      Meta: &lt; {{ factor_meta }}
     </div>
+  </div>
 
-    <div class="card indicator-card critical">
+  <!-- Tiempo de Respuesta -->
+  <div class="card indicator-card">
+    <div class="kpi">
+      <div>⏱️</div>
+      <div style="flex:1">
+        <h3>Tiempo Respuesta Promedio</h3>
+        <div class="v">{{ tiempo_respuesta }}h</div>
+        <div class="bar" style="margin-top:8px">
+          <i data-bar="{{ tiempo_bar }}" style="background:var(--info)"></i>
+        </div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px; margin-top:8px">
+      Meta: &lt; 2.5h
+    </div>
+  </div>
+
+  <!-- Hallazgos Críticos -->
+  <div class="card indicator-card critical">
+    <div class="kpi">
+      <div>🔍</div>
+      <div style="flex:1">
         <h3>Hallazgos Críticos</h3>
-        <div class="value">12</div>
+        <div class="v">{{ hallazgos_criticos }}</div>
+        <div class="bar" style="margin-top:8px">
+          <i data-bar="{{ hallazgos_bar }}" style="background:var(--danger)"></i>
+        </div>
+      </div>
     </div>
+    <div class="muted" style="font-size:12px; margin-top:8px">
+      No Conformidades Mayores<br>
+      Requieren atención inmediata
+    </div>
+  </div>
 
-</div>
-
-<div class="card" style="margin-top:20px">
-    <h3>Alertas del Sistema</h3>
-    <ul>
-        <li>2 Hallazgos pendientes de cierre</li>
-        <li>Proceso “Distribución” interrumpido</li>
-        <li>3 Incidentes sin causa raíz</li>
+  <!-- Alertas del Sistema -->
+  <div class="card" style="grid-column:span 2">
+    <h3 style="margin-top:0">Alertas del Sistema</h3>
+    <ul id="alertas">
+      {% if hallazgos_pendientes > 0 %}
+      <li>{{ hallazgos_pendientes }} Hallazgo{{ hallazgos_pendientes|pluralize:"s" }} pendiente{{ hallazgos_pendientes|pluralize:"s" }} de cierre</li>
+      {% endif %}
+      {% for proceso in procesos_interrumpidos %}
+      <li>Proceso "{{ proceso.nombre }}" interrumpido</li>
+      {% endfor %}
+      {% if incidentes_sin_causa_raiz > 0 %}
+      <li>{{ incidentes_sin_causa_raiz }} Incidente{{ incidentes_sin_causa_raiz|pluralize:"s" }} sin causa raíz asignada</li>
+      {% endif %}
+      {% if not hallazgos_pendientes and not procesos_interrumpidos and not incidentes_sin_causa_raiz %}
+      <li>Sin alertas activas.</li>
+      {% endif %}
     </ul>
+    <button class="btn warn" style="margin-top:12px;width:100%;font-size:12px;justify-content:center">Ver Alertas</button>
+  </div>
+
 </div>
 
 {% endblock %}

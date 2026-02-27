@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Indicadores | SIGCS{% endblock %}
+{% block nav_indicadores %}active{% endblock %}
+
+{% block content %}
+
+<!-- Encabezado -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">📈 Indicadores</h2>
+    <p class="page-sub">Seguimiento y control de indicadores de gestión</p>
+  </div>
+  <button class="btn primary">➕ Nuevo Indicador</button>
+</div>
+
+<!-- KPI Cards -->
+<div class="dashboard-grid" style="margin-bottom:20px">
+
+  <div class="card indicator-card">
+    <div class="kpi">
+      <div>📈</div>
+      <div style="flex:1">
+        <h3>Total Indicadores</h3>
+        <div class="v">{{ total }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Registrados en el sistema</div>
+  </div>
+
+  <div class="card indicator-card {% if cumpliendo > 0 %}success{% endif %}">
+    <div class="kpi">
+      <div>✅</div>
+      <div style="flex:1">
+        <h3>Cumpliendo Meta</h3>
+        <div class="v">{{ cumpliendo }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Dentro del rango esperado</div>
+  </div>
+
+  <div class="card indicator-card {% if por_debajo > 0 %}critical{% endif %}">
+    <div class="kpi">
+      <div>⚠️</div>
+      <div style="flex:1">
+        <h3>Por Debajo de Meta</h3>
+        <div class="v">{{ por_debajo }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Requieren atención</div>
+  </div>
+
+  <div class="card indicator-card">
+    <div class="kpi">
+      <div>↗️</div>
+      <div style="flex:1">
+        <h3>Tendencia Alza</h3>
+        <div class="v">{{ en_alza }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Con tendencia positiva</div>
+  </div>
+
+</div>
+
+<!-- Tabla de indicadores -->
+<div class="card">
+  <div class="data-table-controls">
+    <h3 style="margin:0">Listado de Indicadores</h3>
+    <button class="btn ok" id="btnReporteIndicadores">Generar Reporte</button>
+  </div>
+
+  {% if indicadores %}
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Indicador</th>
+          <th>Área</th>
+          <th>Valor</th>
+          <th>Meta</th>
+          <th>Tendencia</th>
+          <th>Mejor al</th>
+          <th>Responsable</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ind in indicadores %}
+        <tr>
+          <td>
+            <strong>{{ ind.nombre }}</strong>
+            {% if ind.formula %}
+            <br><span class="muted" style="font-size:12px">{{ ind.formula|truncatewords:8 }}</span>
+            {% endif %}
+          </td>
+          <td>{{ ind.area }}</td>
+          <td>
+            <strong>{{ ind.valor }} {{ ind.unidad }}</strong>
+          </td>
+          <td>{{ ind.meta }} {{ ind.unidad }}</td>
+          <td>
+            {% if ind.tendencia == 'alza' %}
+            <span class="trend-indicator up">↗ Alza</span>
+            {% elif ind.tendencia == 'baja' %}
+            <span class="trend-indicator down">↘ Baja</span>
+            {% else %}
+            <span class="trend-indicator">→ Estable</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if ind.mejor_al == 'alza' %}
+            <span class="chip ok">ALZA</span>
+            {% else %}
+            <span class="chip danger">BAJA</span>
+            {% endif %}
+          </td>
+          <td>{{ ind.responsable }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <p class="empty-state">
+    No hay indicadores registrados. Crea el primero desde el
+    <a href="/admin/">panel de administración</a>.
+  </p>
+  {% endif %}
+
+</div>
+
+{% endblock %}

@@ -1,68 +1,98 @@
 {% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es" data-theme="light">
 <head>
-    <meta charset="utf-8">
-    <title>{% block title %}SIGCS{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- CSS general -->
-    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SIGCS{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
-
 <body>
-<div class="app">
+<div class="app" id="app">
 
-    <!-- Sidebar -->
-    <aside>
-        <div class="brand">
-            <span class="dot"></span>
-            SIGCS <span class="badge">v3.0</span>
+  <!-- Sidebar -->
+  <aside aria-label="Barra lateral de navegación">
+    <div class="brand">
+      <span class="dot" aria-hidden="true"></span>
+      SIGCS
+      <span class="badge" title="Versión">v3.0</span>
+    </div>
+
+    <nav>
+      <a href="{% url 'dashboard' %}"   class="{% block nav_dashboard %}{% endblock %}">📊 Dashboard</a>
+      <a href="{% url 'avance_obra' %}" class="{% block nav_avance %}{% endblock %}">🏗️ Avance de Obra</a>
+      <a href="{% url 'indicadores' %}" class="{% block nav_indicadores %}{% endblock %}">📈 Indicadores</a>
+      <a href="#">🔍 Reporte Hallazgos</a>
+      <a href="#">📋 Auditorías</a>
+      <a href="#">⚠️ Incidentes</a>
+      <a href="#">🎯 Competencias</a>
+      <a href="#">👥 Usuarios</a>
+      <a href="#">🔐 Permisos</a>
+      <a href="#">⚙️ Configuración</a>
+    </nav>
+
+    <!-- Footer del sidebar -->
+    <div class="sidebar-footer">
+      <button class="btn" id="toggleTheme" style="width:100%;justify-content:center"
+              aria-pressed="false" aria-label="Cambiar tema">🌗 Tema</button>
+      <div class="muted" style="font-size:12px; margin-top:10px; padding:0 4px;">
+        <span>Responsable SGI</span>
+        <div class="permission-level admin" style="margin-top:4px;">
+          <span class="dot"></span>
+          <span>Nivel: <strong>Administrador</strong></span>
         </div>
+      </div>
+    </div>
+  </aside>
 
-        <nav>
-            <a href="{% url 'dashboard' %}" class="active">📊 Dashboard</a>
-            <a href="#">🏗️ Avance de Obra</a>
-            <a href="#">📈 Indicadores</a>
-            <a href="#">🔍 Hallazgos</a>
-            <a href="#">📋 Auditorías</a>
-            <a href="#">⚠️ Incidentes</a>
-            <a href="#">🎯 Competencias</a>
-            <a href="#">👥 Usuarios</a>
-            <a href="#">🔐 Permisos</a>
-            <a href="#">⚙️ Configuración</a>
-        </nav>
+  <!-- Contenido principal -->
+  <section>
 
-        <button class="btn">🌗 Tema</button>
-    </aside>
+    <!-- Header / Topbar -->
+    <header>
+      <div class="search" role="search">
+        <span aria-hidden="true">🔎</span>
+        <input type="text" placeholder="Buscar en SIGCS…" aria-label="Buscar en el sistema">
+      </div>
 
-    <!-- Contenido -->
-    <section>
+      <button class="btn desktop-only" id="newItem">➕ Nuevo</button>
+      <button class="btn info" id="quickReport">📊 Reporte Histórico</button>
+      <button class="btn" id="exportCsv">⬇️ Exportar</button>
 
-        <!-- Header -->
-        <header>
-            <div class="search">
-                <span>🔎</span>
-                <input type="text" placeholder="Buscar en SIGCS…">
-            </div>
+      <div class="stack muted user-info" aria-live="polite">
+        <span>Usuario: <strong>Responsable SGI</strong></span>
+        <span class="role-tag">SGI</span>
+      </div>
+    </header>
 
-            <button class="btn">➕ Nuevo</button>
-            <button class="btn info">📊 Reporte</button>
-            <button class="btn warn">🔔 Notificaciones</button>
+    <!-- Contenido de la página -->
+    <main>
+      {% block content %}{% endblock %}
+    </main>
 
-            <div class="user-info">
-                Usuario: <strong>Responsable SGI</strong>
-            </div>
-        </header>
-
-        <!-- Main -->
-        <main>
-            {% block content %}
-            {% endblock %}
-        </main>
-
-    </section>
+  </section>
 
 </div>
+
+<!-- Toast global -->
+<div class="toast" id="toast" role="status" aria-live="assertive">Listo ✅</div>
+
+<script>
+  // Toggle tema
+  const btn = document.getElementById('toggleTheme');
+  if (btn) {
+    btn.addEventListener('click', () => {
+      const html = document.documentElement;
+      const isLight = html.getAttribute('data-theme') === 'light';
+      html.setAttribute('data-theme', isLight ? 'dark' : 'light');
+      btn.setAttribute('aria-pressed', String(isLight));
+    });
+  }
+
+  // Aplicar anchos de barra desde data-bar (evita que el linter CSS marque error)
+  document.querySelectorAll('.bar i[data-bar]').forEach(el => {
+    el.style.width = el.dataset.bar + '%';
+  });
+</script>
 </body>
 </html>

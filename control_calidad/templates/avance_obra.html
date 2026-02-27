@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Avance de Obra | SIGCS{% endblock %}
+{% block nav_avance %}active{% endblock %}
+
+{% block content %}
+
+<!-- Encabezado -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">🏗️ Avance de Obra</h2>
+    <p class="page-sub">Seguimiento del progreso por proyecto y fase</p>
+  </div>
+  <button class="btn primary">➕ Registrar Avance</button>
+</div>
+
+<!-- KPI Cards -->
+<div class="dashboard-grid" style="margin-bottom:20px">
+
+  <div class="card indicator-card">
+    <div class="kpi">
+      <div>🏗️</div>
+      <div style="flex:1">
+        <h3>Total Obras</h3>
+        <div class="v">{{ total_obras }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Registradas en el sistema</div>
+  </div>
+
+  <div class="card indicator-card {% if obras_activas > 0 %}success{% endif %}">
+    <div class="kpi">
+      <div>▶️</div>
+      <div style="flex:1">
+        <h3>En Progreso</h3>
+        <div class="v">{{ obras_activas }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Obras activas</div>
+  </div>
+
+  <div class="card indicator-card {% if obras_finalizadas > 0 %}success{% endif %}">
+    <div class="kpi">
+      <div>✅</div>
+      <div style="flex:1">
+        <h3>Finalizadas</h3>
+        <div class="v">{{ obras_finalizadas }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Obras completadas</div>
+  </div>
+
+  <div class="card indicator-card {% if obras_retrasadas > 0 %}critical{% endif %}">
+    <div class="kpi">
+      <div>⏰</div>
+      <div style="flex:1">
+        <h3>Retrasadas</h3>
+        <div class="v">{{ obras_retrasadas }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Requieren atención</div>
+  </div>
+
+</div>
+
+<!-- Avance promedio global -->
+<div class="card" style="margin-bottom:20px">
+  <h3>Avance Promedio Global</h3>
+  <div class="global-progress-wrap">
+    <div class="global-progress-bar">
+      <div class="global-progress-fill" style="width:{{ avance_promedio }}%"></div>
+    </div>
+    <span class="global-progress-label">{{ avance_promedio }}%</span>
+  </div>
+</div>
+
+<!-- Tabla de obras -->
+<div class="card">
+  <div class="data-table-controls">
+    <h3 style="margin:0">Listado de Obras</h3>
+    <button class="btn ok" id="btnReporteAvance">Generar Reporte</button>
+  </div>
+
+  {% if obras %}
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Proyecto</th>
+          <th>Responsable</th>
+          <th>Avance Real</th>
+          <th>Progreso</th>
+          <th>Fecha Fin</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for obra in obras %}
+
+        <!-- Fila de la obra -->
+        <tr class="obra-row">
+          <td>
+            <strong>{{ obra.nombre }}</strong>
+            {% if obra.descripcion %}
+            <br><span class="muted" style="font-size:12px">{{ obra.descripcion|truncatewords:10 }}</span>
+            {% endif %}
+          </td>
+          <td>{{ obra.responsable }}</td>
+          <td>
+            <strong>{{ obra.avance_real }}%</strong>
+            <span class="muted"> / {{ obra.avance_programado }}%</span>
+          </td>
+          <td style="min-width:160px">
+            <div class="bar">
+              <i data-bar="{{ obra.avance_real }}" class="{% if obra.avance_real >= obra.avance_programado %}bar-ok{% else %}bar-warn{% endif %}"></i>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:2px" class="muted">
+              <span>Real</span><span>Meta</span>
+            </div>
+          </td>
+          <td>{{ obra.fecha_fin_programada }}</td>
+          <td>
+            <span class="estado-badge estado-{{ obra.estado }}">{{ obra.get_estado_display }}</span>
+          </td>
+        </tr>
+
+        <!-- Fases de la obra -->
+        {% if obra.fases.all %}
+        <tr class="fases-row">
+          <td colspan="6">
+            <div class="fases-grid">
+              {% for fase in obra.fases.all %}
+              <div class="fase-card">
+                <div class="fase-header">
+                  <span class="fase-nombre">{{ fase.nombre }}</span>
+                  <span class="estado-badge estado-{{ fase.estado }}">{{ fase.get_estado_display }}</span>
+                </div>
+                <div class="bar">
+                  <i data-bar="{{ fase.avance_real }}" class="{% if fase.avance_real >= fase.avance_programado %}bar-ok{% else %}bar-warn{% endif %}"></i>
+                </div>
+                <div class="fase-meta">
+                  <span>Real: <strong>{{ fase.avance_real }}%</strong></span>
+                  <span>Meta: {{ fase.avance_programado }}%</span>
+                  <span>Fin: {{ fase.fecha_fin_programada }}</span>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </td>
+        </tr>
+        {% endif %}
+
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <p class="empty-state">
+    No hay obras registradas. Crea la primera desde el
+    <a href="/admin/">panel de administración</a>.
+  </p>
+  {% endif %}
+
+</div>
+
+{% endblock %}
