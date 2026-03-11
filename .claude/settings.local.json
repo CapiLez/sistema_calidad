@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(python manage.py makemigrations control_calidad)",
-      "Bash(python manage.py migrate)",
-      "Bash(python manage.py check)"
-    ]
-  }
-}
