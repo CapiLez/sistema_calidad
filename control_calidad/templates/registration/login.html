@@ -1,0 +1,74 @@
+{% load static %}
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Iniciar Sesión | SIGCS</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <style>
+    body { margin: 0; display: grid; place-items: center; min-height: 100vh; background: var(--bg); }
+    .login-card { width: 100%; max-width: 380px; padding: 0 16px; }
+    .login-brand { text-align: center; margin-bottom: 32px; }
+    .login-brand .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--brand); margin-right: 8px; }
+    .login-brand h1 { font-size: 28px; font-weight: 700; margin: 0; color: var(--text); }
+    .login-brand p  { color: var(--muted); margin: 6px 0 0; font-size: 13px; }
+    .login-error { background: var(--danger-bg, #fff0f0); color: var(--danger); border: 1px solid var(--danger); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; }
+  </style>
+</head>
+<body>
+<div class="login-card">
+
+  <div class="login-brand">
+    <div>
+      <span class="dot"></span>
+      <span style="font-size:28px;font-weight:700;">SIGCS</span>
+      <span class="badge" style="margin-left:6px">v3.0</span>
+    </div>
+    <p>Sistema Integrado de Gestión y Control de Calidad</p>
+  </div>
+
+  <div class="box">
+    <h2 style="margin:0 0 20px;font-size:18px;">Iniciar sesión</h2>
+
+    {% if form.errors %}
+    <div class="login-error">
+      Usuario o contraseña incorrectos. Por favor intente nuevamente.
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+
+      <div class="field" style="margin-bottom:14px">
+        <label for="id_username">Usuario</label>
+        <input type="text" name="username" id="id_username" class="form-control"
+               placeholder="Nombre de usuario" autofocus autocomplete="username"
+               value="{{ form.username.value|default:'' }}">
+      </div>
+
+      <div class="field" style="margin-bottom:20px">
+        <label for="id_password">Contraseña</label>
+        <input type="password" name="password" id="id_password" class="form-control"
+               placeholder="Contraseña" autocomplete="current-password">
+      </div>
+
+      <button type="submit" class="btn ok" style="width:100%;justify-content:center;font-size:15px;padding:10px">
+        Ingresar
+      </button>
+    </form>
+  </div>
+
+  <p style="text-align:center;margin-top:16px;font-size:12px;color:var(--muted)">
+    Contacte al administrador del sistema si no tiene acceso.
+  </p>
+
+</div>
+
+<script>
+  const saved = localStorage.getItem('sigcs-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+</script>
+</body>
+</html>

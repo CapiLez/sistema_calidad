@@ -18,17 +18,19 @@
       <span class="badge" title="Versión">v3.0</span>
     </div>
 
-    <nav>
-      <a href="{% url 'dashboard' %}"   class="{% block nav_dashboard %}{% endblock %}">📊 Dashboard</a>
-      <a href="{% url 'avance_obra' %}" class="{% block nav_avance %}{% endblock %}">🏗️ Avance de Obra</a>
-      <a href="{% url 'indicadores' %}" class="{% block nav_indicadores %}{% endblock %}">📈 Indicadores</a>
-      <a href="#">🔍 Reporte Hallazgos</a>
-      <a href="#">📋 Auditorías</a>
-      <a href="#">⚠️ Incidentes</a>
-      <a href="#">🎯 Competencias</a>
-      <a href="#">👥 Usuarios</a>
-      <a href="#">🔐 Permisos</a>
-      <a href="#">⚙️ Configuración</a>
+    <nav id="nav">
+      <a href="{% url 'dashboard' %}"    class="{% block nav_dashboard %}{% endblock %}"    data-permission="dashboard.view">📊 Dashboard</a>
+      <a href="{% url 'avance_obra' %}"  class="{% block nav_avance %}{% endblock %}"       data-permission="avanceobra.view">🏗️ Avance de Obra</a>
+      <a href="{% url 'indicadores' %}"  class="{% block nav_indicadores %}{% endblock %}"  data-permission="indicadores.view">📈 Indicadores</a>
+      <a href="{% url 'hallazgos' %}"    class="{% block nav_hallazgos %}{% endblock %}"    data-permission="hallazgos.view">🔍 Reporte Hallazgos</a>
+      <a href="{% url 'auditorias' %}"   class="{% block nav_auditorias %}{% endblock %}"   data-permission="auditorias.view">📋 Auditorías</a>
+      <a href="{% url 'incidentes' %}"   class="{% block nav_incidentes %}{% endblock %}"   data-permission="incidentes.view">⚠️ Incidentes</a>
+      <a href="{% url 'competencias' %}" class="{% block nav_competencias %}{% endblock %}" data-permission="competencias.view">🎯 Competencias</a>
+      {% if request.user.is_staff %}
+      <a href="{% url 'usuarios' %}"      class="{% block nav_usuarios %}{% endblock %}"      data-permission="usuarios.view">👥 Usuarios</a>
+      <a href="{% url 'permisos' %}"      class="{% block nav_permisos %}{% endblock %}"      data-permission="permisos.view">🔐 Permisos</a>
+      <a href="{% url 'configuracion' %}" class="{% block nav_configuracion %}{% endblock %}" data-permission="config.view">⚙️ Configuración</a>
+      {% endif %}
     </nav>
 
     <!-- Footer del sidebar -->
@@ -36,10 +38,10 @@
       <button class="btn" id="toggleTheme" style="width:100%;justify-content:center"
               aria-pressed="false" aria-label="Cambiar tema">🌗 Tema</button>
       <div class="muted" style="font-size:12px; margin-top:10px; padding:0 4px;">
-        <span>Responsable SGI</span>
+        <span>{{ request.user.get_full_name|default:request.user.username }}</span>
         <div class="permission-level admin" style="margin-top:4px;">
           <span class="dot"></span>
-          <span>Nivel: <strong>Administrador</strong></span>
+          <span>Nivel: <strong>{% if request.user.is_staff %}Administrador{% else %}Operador{% endif %}</strong></span>
         </div>
       </div>
     </div>
@@ -52,16 +54,25 @@
     <header>
       <div class="search" role="search">
         <span aria-hidden="true">🔎</span>
-        <input type="text" placeholder="Buscar en SIGCS…" aria-label="Buscar en el sistema">
+        <input type="text" placeholder="Buscar en SIGCS… (Ctrl+/)" aria-label="Buscar en el sistema">
       </div>
 
       <button class="btn desktop-only" id="newItem">➕ Nuevo</button>
       <button class="btn info" id="quickReport">📊 Reporte Histórico</button>
       <button class="btn" id="exportCsv">⬇️ Exportar</button>
+      <button class="btn warn" id="btnNotificaciones" style="position:relative">
+        🔔 Notificaciones
+        <span id="notificationCount" class="notification-badge" style="display:none">0</span>
+      </button>
+
+      <form method="post" action="{% url 'logout' %}" style="margin:0">
+        {% csrf_token %}
+        <button type="submit" class="btn" title="Cerrar sesión">🚪 Salir</button>
+      </form>
 
       <div class="stack muted user-info" aria-live="polite">
-        <span>Usuario: <strong>Responsable SGI</strong></span>
-        <span class="role-tag">SGI</span>
+        <span>{{ request.user.get_full_name|default:request.user.username }}</span>
+        <span class="role-tag">{% if request.user.is_staff %}Admin{% else %}Operador{% endif %}</span>
       </div>
     </header>
 
@@ -74,25 +85,103 @@
 
 </div>
 
+<!-- Modal Notificaciones -->
+<div class="modal-overlay" id="modal-notificaciones" style="display:none">
+  <div class="box" role="document" style="max-width:420px">
+    <div class="stack" style="justify-content:space-between;margin-bottom:14px">
+      <h3 style="margin:0">🔔 Notificaciones</h3>
+      <button class="btn" onclick="closeModal('modal-notificaciones')" aria-label="Cerrar">✖</button>
+    </div>
+    <div id="notificacionesBody" style="max-height:400px;overflow-y:auto">
+      <p class="muted" style="text-align:center;padding:20px">No hay notificaciones pendientes</p>
+    </div>
+    <div style="margin-top:12px;text-align:center">
+      <button class="btn" onclick="closeModal('modal-notificaciones')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast global -->
 <div class="toast" id="toast" role="status" aria-live="assertive">Listo ✅</div>
 
 <script>
-  // Toggle tema
-  const btn = document.getElementById('toggleTheme');
-  if (btn) {
-    btn.addEventListener('click', () => {
+  // ── Tema ──────────────────────────────────────────────────────────────────
+  const themeBtn = document.getElementById('toggleTheme');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', () => {
       const html = document.documentElement;
       const isLight = html.getAttribute('data-theme') === 'light';
       html.setAttribute('data-theme', isLight ? 'dark' : 'light');
-      btn.setAttribute('aria-pressed', String(isLight));
+      themeBtn.setAttribute('aria-pressed', String(isLight));
     });
   }
 
-  // Aplicar anchos de barra desde data-bar (evita que el linter CSS marque error)
+  // ── Barras de progreso ────────────────────────────────────────────────────
   document.querySelectorAll('.bar i[data-bar]').forEach(el => {
     el.style.width = el.dataset.bar + '%';
   });
+
+  // ── Modales (display:grid + place-items:center) ───────────────────────────
+  function openModal(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = 'grid';
+    const first = el.querySelector('input:not([type=hidden]), select, textarea');
+    if (first) setTimeout(() => first.focus(), 60);
+  }
+
+  function closeModal(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  }
+
+  // Cerrar al hacer clic en el overlay (fuera del .box)
+  document.addEventListener('click', e => {
+    if (e.target.classList.contains('modal-overlay')) closeModal(e.target.id);
+  });
+
+  // Cerrar con Escape
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape')
+      document.querySelectorAll('.modal-overlay').forEach(m => closeModal(m.id));
+  });
+
+  // ── Notificaciones ────────────────────────────────────────────────────────
+  const btnNotif = document.getElementById('btnNotificaciones');
+  if (btnNotif) btnNotif.addEventListener('click', () => openModal('modal-notificaciones'));
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  function showToast(msg, type='info') {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    const colors = { success:'var(--brand)', error:'var(--danger)', warning:'var(--warn)', info:'var(--info)' };
+    t.style.borderLeftColor = colors[type] || colors.info;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  {% if messages %}
+  document.addEventListener('DOMContentLoaded', () => {
+    {% for msg in messages %}showToast('{{ msg|escapejs }}', 'success');{% endfor %}
+  });
+  {% endif %}
+
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+  document.addEventListener('click', e => {
+    const tab = e.target.closest('.tab');
+    if (!tab) return;
+    const container = tab.closest('.tabs').parentElement;
+    tab.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const panel = tab.dataset.tab;
+    container.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    const target = container.querySelector(`[data-panel="${panel}"]`);
+    if (target) target.classList.add('active');
+  });
+
+  // ── Acciones del header (sobreescribibles por cada página) ─────────────────
+  {% block header_scripts %}{% endblock %}
 </script>
 </body>
 </html>

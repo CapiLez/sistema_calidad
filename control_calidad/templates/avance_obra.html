@@ -11,7 +11,7 @@
     <h2 class="page-title">🏗️ Avance de Obra</h2>
     <p class="page-sub">Seguimiento del progreso por proyecto y fase</p>
   </div>
-  <button class="btn primary">➕ Registrar Avance</button>
+  <button class="btn primary" onclick="openModal('modal-obra')">➕ Nueva Obra</button>
 </div>
 
 <!-- KPI Cards -->
@@ -78,7 +78,7 @@
 <div class="card">
   <div class="data-table-controls">
     <h3 style="margin:0">Listado de Obras</h3>
-    <button class="btn ok" id="btnReporteAvance">Generar Reporte</button>
+    <a href="{% url 'exportar_avance_obra' %}" class="btn ok">⬇️ Exportar CSV</a>
   </div>
 
   {% if obras %}
@@ -163,5 +163,57 @@
   {% endif %}
 
 </div>
+
+<!-- Modal Nueva Obra -->
+<div class="modal-overlay" id="modal-obra" style="display:{% if show_modal %}grid{% else %}none{% endif %}">
+  <div class="box" role="dialog" aria-modal="true" style="max-width:600px">
+    <div class="stack" style="justify-content:space-between;margin-bottom:14px">
+      <h3 style="margin:0">Nueva Obra / Proyecto</h3>
+      <button class="btn" onclick="closeModal('modal-obra')" aria-label="Cerrar">✖</button>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="row">
+        <div class="field col-12">
+          <label>Nombre *</label>
+          {{ form.nombre }}
+          {% if form.nombre.errors %}<span class="form-error">{{ form.nombre.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="field col-12">
+          <label>Descripción</label>
+          {{ form.descripcion }}
+        </div>
+        <div class="field col-6">
+          <label>Responsable *</label>
+          {{ form.responsable }}
+        </div>
+        <div class="field col-6">
+          <label>Estado</label>
+          {{ form.estado }}
+        </div>
+        <div class="field col-6">
+          <label>Fecha Inicio *</label>
+          {{ form.fecha_inicio }}
+          {% if form.fecha_inicio.errors %}<span class="form-error">{{ form.fecha_inicio.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="field col-6">
+          <label>Fecha Fin Programada *</label>
+          {{ form.fecha_fin_programada }}
+          {% if form.fecha_fin_programada.errors %}<span class="form-error">{{ form.fecha_fin_programada.errors.0 }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="stack" style="justify-content:flex-end;gap:8px;margin-top:16px">
+        <button type="button" class="btn" onclick="closeModal('modal-obra')">Cancelar</button>
+        <button type="submit" class="btn ok">💾 Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% block header_scripts %}
+document.getElementById('newItem').onclick   = () => openModal('modal-obra');
+document.getElementById('exportCsv').onclick  = () => window.location = '{% url "exportar_avance_obra" %}';
+document.getElementById('quickReport').onclick = () => window.location = '{% url "exportar_avance_obra" %}';
+{% endblock %}
 
 {% endblock %}

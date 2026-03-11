@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte de Hallazgos | SIGCS{% endblock %}
+{% block nav_hallazgos %}active{% endblock %}
+
+{% block content %}
+
+<!-- Encabezado -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">🔍 Reporte de Hallazgos</h2>
+    <p class="page-sub">Seguimiento de no conformidades y observaciones del sistema</p>
+  </div>
+  <button class="btn primary" onclick="openModal('modal-hallazgo')">➕ Nuevo Hallazgo</button>
+</div>
+
+<!-- KPI Cards -->
+<div class="dashboard-grid" style="margin-bottom:20px">
+
+  <div class="card indicator-card">
+    <div class="kpi">
+      <div>🔍</div>
+      <div style="flex:1">
+        <h3>Total Hallazgos</h3>
+        <div class="v">{{ total }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Registrados en el sistema</div>
+  </div>
+
+  <div class="card indicator-card {% if pendientes > 0 %}critical{% endif %}">
+    <div class="kpi">
+      <div>⏳</div>
+      <div style="flex:1">
+        <h3>Pendientes</h3>
+        <div class="v">{{ pendientes }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Sin iniciar atención</div>
+  </div>
+
+  <div class="card indicator-card">
+    <div class="kpi">
+      <div>🔧</div>
+      <div style="flex:1">
+        <h3>En Proceso</h3>
+        <div class="v">{{ en_proceso }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Bajo seguimiento activo</div>
+  </div>
+
+  <div class="card indicator-card {% if criticos > 0 %}critical{% endif %}">
+    <div class="kpi">
+      <div>🚨</div>
+      <div style="flex:1">
+        <h3>Críticos</h3>
+        <div class="v">{{ criticos }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Severidad crítica activa</div>
+  </div>
+
+</div>
+
+<!-- Filtros -->
+<form method="get">
+  <div class="toolbar" style="margin-bottom:16px">
+    <select name="severidad" class="filter-select">
+      <option value="">Severidad: Todas</option>
+      <option value="critico"  {% if severidad_f == 'critico' %}selected{% endif %}>Crítico</option>
+      <option value="alto"     {% if severidad_f == 'alto' %}selected{% endif %}>Alto</option>
+      <option value="medio"    {% if severidad_f == 'medio' %}selected{% endif %}>Medio</option>
+      <option value="bajo"     {% if severidad_f == 'bajo' %}selected{% endif %}>Bajo</option>
+    </select>
+    <select name="estado" class="filter-select">
+      <option value="">Estado: Todos</option>
+      <option value="pendiente"  {% if estado_f == 'pendiente' %}selected{% endif %}>Pendiente</option>
+      <option value="en_proceso" {% if estado_f == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+      <option value="cerrado"    {% if estado_f == 'cerrado' %}selected{% endif %}>Cerrado</option>
+    </select>
+    <select name="proceso" class="filter-select">
+      <option value="">Proceso: Todos</option>
+      {% for p in procesos %}
+      <option value="{{ p.id }}" {% if proceso_f == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nombre }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn primary">Filtrar</button>
+    {% if severidad_f or estado_f or proceso_f %}
+    <a href="{% url 'hallazgos' %}" class="btn">Limpiar</a>
+    {% endif %}
+  </div>
+</form>
+
+<!-- Tabla -->
+<div class="card">
+  <div class="data-table-controls">
+    <h3 style="margin:0">
+      Listado de Hallazgos
+      {% if severidad_f or estado_f or proceso_f %}
+      <span class="chip info" style="font-size:12px;vertical-align:middle">Filtrado</span>
+      {% endif %}
+    </h3>
+    <a href="{% url 'exportar_hallazgos' %}" class="btn ok">⬇️ Exportar CSV</a>
+  </div>
+
+  {% if hallazgos %}
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Título</th>
+          <th>Proceso</th>
+          <th>Severidad</th>
+          <th>Estado</th>
+          <th>Fecha Reporte</th>
+          <th>Fecha Cierre</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in hallazgos %}
+        <tr>
+          <td>
+            <strong>{{ h.titulo }}</strong>
+            {% if h.descripcion %}
+            <br><span class="muted" style="font-size:12px">{{ h.descripcion|truncatewords:10 }}</span>
+            {% endif %}
+          </td>
+          <td>{{ h.proceso.nombre|default:"—" }}</td>
+          <td>
+            {% if h.severidad == 'critico' %}
+            <span class="chip danger">Crítico</span>
+            {% elif h.severidad == 'alto' %}
+            <span class="chip warn">Alto</span>
+            {% elif h.severidad == 'medio' %}
+            <span class="chip info">Medio</span>
+            {% else %}
+            <span class="chip">Bajo</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if h.estado == 'pendiente' %}
+            <span class="chip warn">Pendiente</span>
+            {% elif h.estado == 'en_proceso' %}
+            <span class="chip info">En Proceso</span>
+            {% else %}
+            <span class="chip ok">Cerrado</span>
+            {% endif %}
+          </td>
+          <td>{{ h.fecha_reporte }}</td>
+          <td>{{ h.fecha_cierre|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <p class="empty-state">
+    No se encontraron hallazgos{% if severidad_f or estado_f or proceso_f %} con los filtros aplicados{% endif %}.
+    {% if not severidad_f and not estado_f and not proceso_f %}
+    Crea el primero desde el <a href="/admin/">panel de administración</a>.
+    {% endif %}
+  </p>
+  {% endif %}
+
+</div>
+
+<!-- Modal Nuevo Hallazgo -->
+<div class="modal-overlay" id="modal-hallazgo" style="display:{% if show_modal %}grid{% else %}none{% endif %}">
+  <div class="box" role="dialog" aria-modal="true" style="max-width:600px">
+    <div class="stack" style="justify-content:space-between;margin-bottom:14px">
+      <h3 style="margin:0">Nuevo Hallazgo</h3>
+      <button class="btn" onclick="closeModal('modal-hallazgo')" aria-label="Cerrar">✖</button>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="row">
+        <div class="field col-12">
+          <label>Título *</label>
+          {{ form.titulo }}
+          {% if form.titulo.errors %}<span class="form-error">{{ form.titulo.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="field col-12">
+          <label>Descripción</label>
+          {{ form.descripcion }}
+        </div>
+        <div class="field col-6">
+          <label>Proceso</label>
+          {{ form.proceso }}
+        </div>
+        <div class="field col-6">
+          <label>Severidad</label>
+          {{ form.severidad }}
+        </div>
+        <div class="field col-6">
+          <label>Estado</label>
+          {{ form.estado }}
+        </div>
+        <div class="field col-6">
+          <label>Fecha Cierre</label>
+          {{ form.fecha_cierre }}
+        </div>
+      </div>
+      <div class="stack" style="justify-content:flex-end;gap:8px;margin-top:16px">
+        <button type="button" class="btn" onclick="closeModal('modal-hallazgo')">Cancelar</button>
+        <button type="submit" class="btn ok">💾 Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% block header_scripts %}
+document.getElementById('newItem').onclick  = () => openModal('modal-hallazgo');
+document.getElementById('exportCsv').onclick = () => window.location = '{% url "exportar_hallazgos" %}';
+document.getElementById('quickReport').onclick = () => window.location = '{% url "exportar_hallazgos" %}';
+{% endblock %}
+
+{% endblock %}

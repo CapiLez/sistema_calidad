@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración | SIGCS{% endblock %}
+{% block nav_configuracion %}active{% endblock %}
+
+{% block content %}
+
+<div class="box" style="max-width:620px;margin:0 auto">
+  <h3 style="margin:0 0 20px">⚙️ Configuración del Sistema</h3>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="row">
+      <div class="field col-12">
+        <label>{{ form.nombre_empresa.label }}</label>
+        {{ form.nombre_empresa }}
+        {% if form.nombre_empresa.errors %}<span style="color:var(--danger);font-size:12px">{{ form.nombre_empresa.errors.0 }}</span>{% endif %}
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field col-12">
+        <label>{{ form.descripcion.label }}</label>
+        {{ form.descripcion }}
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field col-6">
+        <label>{{ form.email_contacto.label }}</label>
+        {{ form.email_contacto }}
+        {% if form.email_contacto.errors %}<span style="color:var(--danger);font-size:12px">{{ form.email_contacto.errors.0 }}</span>{% endif %}
+      </div>
+      <div class="field col-6">
+        <label>{{ form.logo_url.label }}</label>
+        {{ form.logo_url }}
+      </div>
+    </div>
+
+    <div class="stack" style="justify-content:flex-end;margin-top:20px">
+      <button type="submit" class="btn ok">💾 Guardar Configuración</button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

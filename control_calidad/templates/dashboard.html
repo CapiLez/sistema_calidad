@@ -99,4 +99,144 @@
 
 </div>
 
+<!-- Sección de Análisis con Tabs -->
+<div class="card" style="margin-top:16px">
+
+  <div class="tabs">
+    <button class="tab active" data-tab="tabla-dinamica">📊 Tablas Dinámicas</button>
+    <button class="tab" data-tab="historico">📈 Análisis Histórico</button>
+    <button class="tab" data-tab="avance-obra">🏗️ Avance de Obra</button>
+  </div>
+
+  <!-- Panel 1: Tablas Dinámicas -->
+  <div class="tab-panel active" data-panel="tabla-dinamica">
+    {% if indicadores_tabla %}
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Indicador</th>
+            <th>Área</th>
+            <th>Responsable</th>
+            <th>Valor</th>
+            <th>Meta</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ind in indicadores_tabla %}
+          <tr>
+            <td><strong>{{ ind.nombre }}</strong></td>
+            <td>{{ ind.area }}</td>
+            <td>{{ ind.responsable }}</td>
+            <td>{{ ind.valor }} {{ ind.unidad }}</td>
+            <td>{{ ind.meta }} {{ ind.unidad }}</td>
+            <td>
+              {% if ind.cumple_meta %}
+              <span class="chip ok">Cumple</span>
+              {% else %}
+              <span class="chip danger">No Cumple</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty-state">No hay indicadores marcados para tabla dinámica.
+      <a href="{% url 'indicadores' %}">Crear indicador →</a>
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- Panel 2: Análisis Histórico -->
+  <div class="tab-panel" data-panel="historico">
+    {% if indicadores_historico %}
+    {% for item in indicadores_historico %}
+    {% with ind=item.ind %}
+    <div class="report-historical">
+      <div class="stack" style="justify-content:space-between;align-items:flex-start">
+        <div>
+          <strong>{{ ind.nombre }}</strong>
+          <div class="muted" style="font-size:12px;margin-top:2px">{{ ind.area }} · {{ ind.responsable }}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:700">{{ ind.valor }} {{ ind.unidad }}</div>
+          <div class="muted" style="font-size:12px">Meta: {{ ind.meta }} {{ ind.unidad }}</div>
+        </div>
+      </div>
+      <div class="competency-progress" style="margin-top:10px">
+        {% if item.ok %}
+        <div class="bar-ok" data-width="{{ item.pct }}"></div>
+        {% else %}
+        <div class="bar-fail" data-width="{{ item.pct }}"></div>
+        {% endif %}
+      </div>
+      <div class="stack" style="justify-content:space-between;margin-top:4px">
+        <span class="muted" style="font-size:11px">0 {{ ind.unidad }}</span>
+        <span class="muted" style="font-size:11px">Meta {{ ind.meta }} {{ ind.unidad }}</span>
+      </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+    {% else %}
+    <p class="empty-state">No hay indicadores marcados para reporte histórico.
+      <a href="{% url 'indicadores' %}">Crear indicador →</a>
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- Panel 3: Avance de Obra -->
+  <div class="tab-panel" data-panel="avance-obra">
+    {% if obras_dash %}
+    <div class="stats-grid" style="margin-bottom:16px">
+      {% for obra in obras_dash %}
+      <div class="stat-card">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">
+          {{ obra.nombre|truncatechars:22 }}
+        </div>
+        <div style="display:flex;gap:16px;align-items:flex-end;margin-bottom:8px">
+          <div>
+            <div style="font-size:11px;color:var(--muted)">Programado</div>
+            <div style="font-size:22px;font-weight:700">{{ obra.avance_programado }}%</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted)">Real</div>
+            {% if obra.avance_real >= obra.avance_programado %}
+            <div class="text-ok" style="font-size:22px;font-weight:700">{{ obra.avance_real }}%</div>
+            {% else %}
+            <div class="text-fail" style="font-size:22px;font-weight:700">{{ obra.avance_real }}%</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="competency-progress">
+          {% if obra.avance_real >= obra.avance_programado %}
+          <div class="bar-ok" data-width="{{ obra.avance_real }}"></div>
+          {% else %}
+          <div class="bar-fail" data-width="{{ obra.avance_real }}"></div>
+          {% endif %}
+        </div>
+        <div class="muted" style="font-size:11px;margin-top:4px">{{ obra.get_estado_display }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="text-align:right">
+      <a href="{% url 'avance_obra' %}" class="btn primary">Ver detalle de obras →</a>
+    </div>
+    {% else %}
+    <p class="empty-state">No hay obras registradas.
+      <a href="{% url 'avance_obra' %}">Registrar primera obra →</a>
+    </p>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+document.querySelectorAll('[data-width]').forEach(function(el) {
+  el.style.width = el.getAttribute('data-width') + '%';
+});
+</script>
+
 {% endblock %}

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Proceso, Hallazgo, Incidente, Indicador, IndicadorCumplimiento, Obra, FaseObra
+from .models import Proceso, Hallazgo, Incidente, Auditoria, Competencia, Indicador, IndicadorCumplimiento, Obra, FaseObra, Configuracion
 
 
 @admin.register(Proceso)
@@ -20,6 +20,22 @@ class IncidenteAdmin(admin.ModelAdmin):
     list_display = ('titulo', 'estado', 'proceso', 'fecha_reporte', 'fecha_resolucion')
     list_filter = ('estado', 'proceso')
     date_hierarchy = 'fecha_reporte'
+
+
+@admin.register(Auditoria)
+class AuditoriaAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'tipo', 'estado', 'proceso', 'responsable', 'fecha_programada', 'hallazgos_encontrados')
+    list_filter = ('tipo', 'estado', 'proceso')
+    search_fields = ('titulo', 'responsable')
+    date_hierarchy = 'fecha_programada'
+
+
+@admin.register(Competencia)
+class CompetenciaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'area', 'responsable', 'nivel_requerido', 'nivel_actual', 'estado', 'fecha_evaluacion')
+    list_filter = ('area', 'estado')
+    search_fields = ('nombre', 'area', 'responsable')
+    date_hierarchy = 'fecha_evaluacion'
 
 
 @admin.register(Indicador)
@@ -53,3 +69,8 @@ class ObraAdmin(admin.ModelAdmin):
 class FaseObraAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'obra', 'avance_real', 'avance_programado', 'estado', 'fecha_fin_programada')
     list_filter = ('estado', 'obra')
+
+
+@admin.register(Configuracion)
+class ConfiguracionAdmin(admin.ModelAdmin):
+    list_display = ('nombre_empresa', 'email_contacto')

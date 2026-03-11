@@ -137,6 +137,73 @@ class FaseObra(models.Model):
         ordering = ['fecha_inicio']
 
 
+class Auditoria(models.Model):
+    TIPO_CHOICES = [
+        ('interna', 'Interna'),
+        ('externa', 'Externa'),
+    ]
+    ESTADO_CHOICES = [
+        ('programada', 'Programada'),
+        ('en_curso', 'En Curso'),
+        ('finalizada', 'Finalizada'),
+        ('cancelada', 'Cancelada'),
+    ]
+    titulo = models.CharField(max_length=300)
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default='interna')
+    estado = models.CharField(max_length=15, choices=ESTADO_CHOICES, default='programada')
+    proceso = models.ForeignKey(
+        'Proceso', on_delete=models.SET_NULL, null=True, blank=True, related_name='auditorias'
+    )
+    responsable = models.CharField(max_length=200)
+    fecha_programada = models.DateField()
+    fecha_realizacion = models.DateField(null=True, blank=True)
+    hallazgos_encontrados = models.PositiveIntegerField(default=0)
+    observaciones = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.titulo
+
+    class Meta:
+        verbose_name = "Auditoría"
+        verbose_name_plural = "Auditorías"
+        ordering = ['-fecha_programada']
+
+
+class Competencia(models.Model):
+    ESTADO_CHOICES = [
+        ('vigente', 'Vigente'),
+        ('por_vencer', 'Por Vencer'),
+        ('vencida', 'Vencida'),
+    ]
+    NIVEL_CHOICES = [(i, str(i)) for i in range(1, 6)]
+
+    nombre = models.CharField(max_length=300)
+    descripcion = models.TextField(blank=True)
+    area = models.CharField(max_length=200)
+    responsable = models.CharField(max_length=200)
+    nivel_requerido = models.PositiveSmallIntegerField(choices=NIVEL_CHOICES, default=3)
+    nivel_actual = models.PositiveSmallIntegerField(choices=NIVEL_CHOICES, default=1)
+    estado = models.CharField(max_length=15, choices=ESTADO_CHOICES, default='vigente')
+    fecha_evaluacion = models.DateField()
+    fecha_vencimiento = models.DateField(null=True, blank=True)
+
+    @property
+    def brecha(self):
+        return self.nivel_requerido - self.nivel_actual
+
+    @property
+    def cumple(self):
+        return self.nivel_actual >= self.nivel_requerido
+
+    def __str__(self):
+        return f"{self.nombre} — {self.responsable}"
+
+    class Meta:
+        verbose_name = "Competencia"
+        verbose_name_plural = "Competencias"
+        ordering = ['area', 'nombre']
+
+
 class Indicador(models.Model):
     MEJOR_AL_CHOICES = [
         ('alza', 'Alza'),
@@ -188,3 +255,22 @@ class IndicadorCumplimiento(models.Model):
         verbose_name = "Indicador de Cumplimiento"
         verbose_name_plural = "Indicadores de Cumplimiento"
         ordering = ['-fecha']
+
+
+class Configuracion(models.Model):
+    nombre_empresa = models.CharField(max_length=200, default='Mi Empresa')
+    descripcion    = models.TextField(blank=True)
+    email_contacto = models.EmailField(blank=True)
+    logo_url       = models.URLField(blank=True)
+
+    @classmethod
+    def get_instancia(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def __str__(self):
+        return self.nombre_empresa
+
+    class Meta:
+        verbose_name = 'Configuración'
+        verbose_name_plural = 'Configuración del Sistema'

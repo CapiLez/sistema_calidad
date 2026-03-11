@@ -11,7 +11,7 @@
     <h2 class="page-title">📈 Indicadores</h2>
     <p class="page-sub">Seguimiento y control de indicadores de gestión</p>
   </div>
-  <button class="btn primary">➕ Nuevo Indicador</button>
+  <button class="btn primary" onclick="openModal('modal-indicador')">➕ Nuevo Indicador</button>
 </div>
 
 <!-- KPI Cards -->
@@ -67,7 +67,7 @@
 <div class="card">
   <div class="data-table-controls">
     <h3 style="margin:0">Listado de Indicadores</h3>
-    <button class="btn ok" id="btnReporteIndicadores">Generar Reporte</button>
+    <a href="{% url 'exportar_indicadores' %}" class="btn ok">⬇️ Exportar CSV</a>
   </div>
 
   {% if indicadores %}
@@ -129,5 +129,75 @@
   {% endif %}
 
 </div>
+
+<!-- Modal Nuevo Indicador -->
+<div class="modal-overlay" id="modal-indicador" style="display:{% if show_modal %}grid{% else %}none{% endif %}">
+  <div class="box" role="dialog" aria-modal="true" style="max-width:680px">
+    <div class="stack" style="justify-content:space-between;margin-bottom:14px">
+      <h3 style="margin:0">Nuevo Indicador</h3>
+      <button class="btn" onclick="closeModal('modal-indicador')" aria-label="Cerrar">✖</button>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="row">
+        <div class="field col-12">
+          <label>Nombre *</label>
+          {{ form.nombre }}
+          {% if form.nombre.errors %}<span class="form-error">{{ form.nombre.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="field col-6">
+          <label>Área *</label>
+          {{ form.area }}
+        </div>
+        <div class="field col-6">
+          <label>Responsable *</label>
+          {{ form.responsable }}
+        </div>
+        <div class="field col-12">
+          <label>Fórmula</label>
+          {{ form.formula }}
+        </div>
+        <div class="field col-4">
+          <label>Valor Actual *</label>
+          {{ form.valor }}
+        </div>
+        <div class="field col-4">
+          <label>Meta *</label>
+          {{ form.meta }}
+        </div>
+        <div class="field col-4">
+          <label>Unidad</label>
+          {{ form.unidad }}
+        </div>
+        <div class="field col-6">
+          <label>Mejor al</label>
+          {{ form.mejor_al }}
+        </div>
+        <div class="field col-6">
+          <label>Tendencia</label>
+          {{ form.tendencia }}
+        </div>
+        <div class="field col-12" style="display:flex;gap:20px;align-items:center">
+          <label style="text-transform:none;font-size:13px;display:flex;align-items:center;gap:6px">
+            {{ form.incluir_historico }} Incluir en reporte histórico
+          </label>
+          <label style="text-transform:none;font-size:13px;display:flex;align-items:center;gap:6px">
+            {{ form.tabla_dinamica }} Tabla dinámica
+          </label>
+        </div>
+      </div>
+      <div class="stack" style="justify-content:flex-end;gap:8px;margin-top:16px">
+        <button type="button" class="btn" onclick="closeModal('modal-indicador')">Cancelar</button>
+        <button type="submit" class="btn ok">💾 Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% block header_scripts %}
+document.getElementById('newItem').onclick   = () => openModal('modal-indicador');
+document.getElementById('exportCsv').onclick  = () => window.location = '{% url "exportar_indicadores" %}';
+document.getElementById('quickReport').onclick = () => window.location = '{% url "exportar_indicadores" %}';
+{% endblock %}
 
 {% endblock %}

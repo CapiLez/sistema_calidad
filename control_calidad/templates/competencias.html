@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Competencias | SIGCS{% endblock %}
+{% block nav_competencias %}active{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h2 class="page-title">🎯 Competencias</h2>
+    <p class="page-sub">Gestión y evaluación de competencias del personal</p>
+  </div>
+  <button class="btn primary" onclick="openModal('modal-competencia')">➕ Nueva Competencia</button>
+</div>
+
+<!-- KPI Cards -->
+<div class="dashboard-grid" style="margin-bottom:20px">
+
+  <div class="card indicator-card">
+    <div class="kpi">
+      <div>🎯</div>
+      <div style="flex:1">
+        <h3>Total Competencias</h3>
+        <div class="v">{{ total }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Evaluadas en el sistema</div>
+  </div>
+
+  <div class="card indicator-card {% if cumpliendo > 0 %}success{% endif %}">
+    <div class="kpi">
+      <div>✅</div>
+      <div style="flex:1">
+        <h3>Nivel Alcanzado</h3>
+        <div class="v">{{ cumpliendo }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Cumplen nivel requerido</div>
+  </div>
+
+  <div class="card indicator-card {% if con_brecha > 0 %}critical{% endif %}">
+    <div class="kpi">
+      <div>⬇️</div>
+      <div style="flex:1">
+        <h3>Con Brecha</h3>
+        <div class="v">{{ con_brecha }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Por debajo del nivel requerido</div>
+  </div>
+
+  <div class="card indicator-card {% if vencidas > 0 %}critical{% endif %}">
+    <div class="kpi">
+      <div>⏰</div>
+      <div style="flex:1">
+        <h3>Vencidas</h3>
+        <div class="v">{{ vencidas }}</div>
+      </div>
+    </div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Requieren reevaluación</div>
+  </div>
+
+</div>
+
+<!-- Filtros -->
+<form method="get">
+  <div class="toolbar" style="margin-bottom:16px">
+    <select name="area" class="filter-select">
+      <option value="">Área: Todas</option>
+      {% for a in areas %}
+      <option value="{{ a }}" {% if area_f == a %}selected{% endif %}>{{ a }}</option>
+      {% endfor %}
+    </select>
+    <select name="estado" class="filter-select">
+      <option value="">Estado: Todos</option>
+      <option value="vigente"    {% if estado_f == 'vigente' %}selected{% endif %}>Vigente</option>
+      <option value="por_vencer" {% if estado_f == 'por_vencer' %}selected{% endif %}>Por Vencer</option>
+      <option value="vencida"    {% if estado_f == 'vencida' %}selected{% endif %}>Vencida</option>
+    </select>
+    <button type="submit" class="btn primary">Filtrar</button>
+    {% if area_f or estado_f %}
+    <a href="{% url 'competencias' %}" class="btn">Limpiar</a>
+    {% endif %}
+  </div>
+</form>
+
+<!-- Tabla -->
+<div class="card">
+  <div class="data-table-controls">
+    <h3 style="margin:0">Listado de Competencias</h3>
+    <a href="{% url 'exportar_competencias' %}" class="btn ok">⬇️ Exportar CSV</a>
+  </div>
+
+  {% if competencias %}
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Competencia</th>
+          <th>Área</th>
+          <th>Responsable</th>
+          <th>Nivel Req.</th>
+          <th>Nivel Actual</th>
+          <th>Brecha</th>
+          <th>Estado</th>
+          <th>F. Evaluación</th>
+          <th>Vencimiento</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in competencias %}
+        <tr>
+          <td>
+            <strong>{{ c.nombre }}</strong>
+            {% if c.descripcion %}
+            <br><span class="muted" style="font-size:12px">{{ c.descripcion|truncatewords:8 }}</span>
+            {% endif %}
+          </td>
+          <td>{{ c.area }}</td>
+          <td>{{ c.responsable }}</td>
+          <td style="text-align:center">
+            <span class="chip info">{{ c.nivel_requerido }}/5</span>
+          </td>
+          <td style="text-align:center">
+            <span class="chip {% if c.cumple %}ok{% else %}danger{% endif %}">{{ c.nivel_actual }}/5</span>
+          </td>
+          <td style="text-align:center">
+            {% if c.brecha > 0 %}
+            <span class="chip danger">-{{ c.brecha }}</span>
+            {% else %}
+            <span class="chip ok">✓</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if c.estado == 'vigente' %}
+            <span class="chip ok">Vigente</span>
+            {% elif c.estado == 'por_vencer' %}
+            <span class="chip warn">Por Vencer</span>
+            {% else %}
+            <span class="chip danger">Vencida</span>
+            {% endif %}
+          </td>
+          <td>{{ c.fecha_evaluacion }}</td>
+          <td>{{ c.fecha_vencimiento|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-state">
+    No hay competencias registradas{% if area_f or estado_f %} con los filtros aplicados{% endif %}.
+    {% if not area_f and not estado_f %}
+    Crea la primera desde el <a href="/admin/">panel de administración</a>.
+    {% endif %}
+  </p>
+  {% endif %}
+
+</div>
+
+<!-- Modal Nueva Competencia -->
+<div class="modal-overlay" id="modal-competencia" style="display:{% if show_modal %}grid{% else %}none{% endif %}">
+  <div class="box" role="dialog" aria-modal="true" style="max-width:680px">
+    <div class="stack" style="justify-content:space-between;margin-bottom:14px">
+      <h3 style="margin:0">Nueva Competencia</h3>
+      <button class="btn" onclick="closeModal('modal-competencia')" aria-label="Cerrar">✖</button>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="row">
+        <div class="field col-12">
+          <label>Nombre *</label>
+          {{ form.nombre }}
+          {% if form.nombre.errors %}<span class="form-error">{{ form.nombre.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="field col-12">
+          <label>Descripción</label>
+          {{ form.descripcion }}
+        </div>
+        <div class="field col-6">
+          <label>Área *</label>
+          {{ form.area }}
+        </div>
+        <div class="field col-6">
+          <label>Responsable *</label>
+          {{ form.responsable }}
+        </div>
+        <div class="field col-4">
+          <label>Nivel Requerido</label>
+          {{ form.nivel_requerido }}
+        </div>
+        <div class="field col-4">
+          <label>Nivel Actual</label>
+          {{ form.nivel_actual }}
+        </div>
+        <div class="field col-4">
+          <label>Estado</label>
+          {{ form.estado }}
+        </div>
+        <div class="field col-6">
+          <label>Fecha Evaluación *</label>
+          {{ form.fecha_evaluacion }}
+          {% if form.fecha_evaluacion.errors %}<span class="form-error">{{ form.fecha_evaluacion.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="field col-6">
+          <label>Vencimiento</label>
+          {{ form.fecha_vencimiento }}
+        </div>
+      </div>
+      <div class="stack" style="justify-content:flex-end;gap:8px;margin-top:16px">
+        <button type="button" class="btn" onclick="closeModal('modal-competencia')">Cancelar</button>
+        <button type="submit" class="btn ok">💾 Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% block header_scripts %}
+document.getElementById('newItem').onclick   = () => openModal('modal-competencia');
+document.getElementById('exportCsv').onclick  = () => window.location = '{% url "exportar_competencias" %}';
+document.getElementById('quickReport').onclick = () => window.location = '{% url "exportar_competencias" %}';
+{% endblock %}
+
+{% endblock %}
