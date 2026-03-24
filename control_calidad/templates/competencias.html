@@ -1,224 +1,196 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Competencias | SIGCS{% endblock %}
-{% block nav_competencias %}active{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/competencias.css' %}">
 
-<div class="page-header">
-  <div>
-    <h2 class="page-title">🎯 Competencias</h2>
-    <p class="page-sub">Gestión y evaluación de competencias del personal</p>
-  </div>
-  <button class="btn primary" onclick="openModal('modal-competencia')">➕ Nueva Competencia</button>
-</div>
+<div class="cmp-page">
 
-<!-- KPI Cards -->
-<div class="dashboard-grid" style="margin-bottom:20px">
-
-  <div class="card indicator-card">
-    <div class="kpi">
-      <div>🎯</div>
-      <div style="flex:1">
-        <h3>Total Competencias</h3>
-        <div class="v">{{ total }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Evaluadas en el sistema</div>
-  </div>
-
-  <div class="card indicator-card {% if cumpliendo > 0 %}success{% endif %}">
-    <div class="kpi">
-      <div>✅</div>
-      <div style="flex:1">
-        <h3>Nivel Alcanzado</h3>
-        <div class="v">{{ cumpliendo }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Cumplen nivel requerido</div>
+  <!-- KPI grid -->
+  <div class="cmp-kpi-grid">
+    <article class="cmp-kpi">
+      <div class="cmp-kpi-head"><div class="cmp-kpi-icon">🎯</div><div class="cmp-kpi-title">Total Competencias</div></div>
+      <div class="cmp-kpi-value">{{ total }}</div>
+      <div class="cmp-kpi-note">Registradas</div>
+    </article>
+    <article class="cmp-kpi">
+      <div class="cmp-kpi-head"><div class="cmp-kpi-icon">✅</div><div class="cmp-kpi-title">Cumpliendo</div></div>
+      <div class="cmp-kpi-value" style="color:#16a34a">{{ cumpliendo }}</div>
+      <div class="cmp-kpi-note">Nivel ≥ requerido</div>
+    </article>
+    <article class="cmp-kpi cmp-kpi-orange">
+      <div class="cmp-kpi-head"><div class="cmp-kpi-icon">⚠️</div><div class="cmp-kpi-title">Con Brecha</div></div>
+      <div class="cmp-kpi-value">{{ con_brecha }}</div>
+      <div class="cmp-kpi-note">Requieren capacitación</div>
+    </article>
+    <article class="cmp-kpi cmp-kpi-red">
+      <div class="cmp-kpi-head"><div class="cmp-kpi-icon">📅</div><div class="cmp-kpi-title">Por Vencer</div></div>
+      <div class="cmp-kpi-value">{{ por_vencer }}</div>
+      <div class="cmp-kpi-note">Vencimiento próximo</div>
+    </article>
   </div>
 
-  <div class="card indicator-card {% if con_brecha > 0 %}critical{% endif %}">
-    <div class="kpi">
-      <div>⬇️</div>
-      <div style="flex:1">
-        <h3>Con Brecha</h3>
-        <div class="v">{{ con_brecha }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Por debajo del nivel requerido</div>
-  </div>
-
-  <div class="card indicator-card {% if vencidas > 0 %}critical{% endif %}">
-    <div class="kpi">
-      <div>⏰</div>
-      <div style="flex:1">
-        <h3>Vencidas</h3>
-        <div class="v">{{ vencidas }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Requieren reevaluación</div>
-  </div>
-
-</div>
-
-<!-- Filtros -->
-<form method="get">
-  <div class="toolbar" style="margin-bottom:16px">
-    <select name="area" class="filter-select">
-      <option value="">Área: Todas</option>
-      {% for a in areas %}
-      <option value="{{ a }}" {% if area_f == a %}selected{% endif %}>{{ a }}</option>
+  <!-- Toolbar / filtros -->
+  <form method="get">
+  <div class="cmp-toolbar">
+    <button class="cmp-btn cmp-btn-primary" type="button" id="cmpOpenModalBtn">➕ Nueva Competencia</button>
+    <select class="cmp-select" name="area">
+      <option value="">Todas las áreas</option>
+      {% for area in areas %}
+      <option value="{{ area }}" {% if area_f == area %}selected{% endif %}>{{ area }}</option>
       {% endfor %}
     </select>
-    <select name="estado" class="filter-select">
-      <option value="">Estado: Todos</option>
-      <option value="vigente"    {% if estado_f == 'vigente' %}selected{% endif %}>Vigente</option>
+    <select class="cmp-select" name="estado">
+      <option value="">Todos los estados</option>
+      <option value="vigente" {% if estado_f == 'vigente' %}selected{% endif %}>Vigente</option>
       <option value="por_vencer" {% if estado_f == 'por_vencer' %}selected{% endif %}>Por Vencer</option>
-      <option value="vencida"    {% if estado_f == 'vencida' %}selected{% endif %}>Vencida</option>
+      <option value="vencida" {% if estado_f == 'vencida' %}selected{% endif %}>Vencida</option>
     </select>
-    <button type="submit" class="btn primary">Filtrar</button>
-    {% if area_f or estado_f %}
-    <a href="{% url 'competencias' %}" class="btn">Limpiar</a>
-    {% endif %}
+    <button class="cmp-btn cmp-btn-ghost" type="submit">🔎 Filtrar</button>
+    <a href="{% url 'competencias' %}" class="cmp-btn cmp-btn-ghost">✕ Limpiar</a>
+    <button class="cmp-btn cmp-btn-ghost" type="button" onclick="window.location='{% url 'exportar_competencias' %}'">⬇️ Exportar</button>
   </div>
-</form>
+  </form>
 
-<!-- Tabla -->
-<div class="card">
-  <div class="data-table-controls">
-    <h3 style="margin:0">Listado de Competencias</h3>
-    <a href="{% url 'exportar_competencias' %}" class="btn ok">⬇️ Exportar CSV</a>
-  </div>
-
-  {% if competencias %}
-  <div class="table-wrapper">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Competencia</th>
-          <th>Área</th>
-          <th>Responsable</th>
-          <th>Nivel Req.</th>
-          <th>Nivel Actual</th>
-          <th>Brecha</th>
-          <th>Estado</th>
-          <th>F. Evaluación</th>
-          <th>Vencimiento</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for c in competencias %}
-        <tr>
-          <td>
-            <strong>{{ c.nombre }}</strong>
-            {% if c.descripcion %}
-            <br><span class="muted" style="font-size:12px">{{ c.descripcion|truncatewords:8 }}</span>
-            {% endif %}
-          </td>
-          <td>{{ c.area }}</td>
-          <td>{{ c.responsable }}</td>
-          <td style="text-align:center">
-            <span class="chip info">{{ c.nivel_requerido }}/5</span>
-          </td>
-          <td style="text-align:center">
-            <span class="chip {% if c.cumple %}ok{% else %}danger{% endif %}">{{ c.nivel_actual }}/5</span>
-          </td>
-          <td style="text-align:center">
-            {% if c.brecha > 0 %}
-            <span class="chip danger">-{{ c.brecha }}</span>
-            {% else %}
-            <span class="chip ok">✓</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if c.estado == 'vigente' %}
-            <span class="chip ok">Vigente</span>
-            {% elif c.estado == 'por_vencer' %}
-            <span class="chip warn">Por Vencer</span>
-            {% else %}
-            <span class="chip danger">Vencida</span>
-            {% endif %}
-          </td>
-          <td>{{ c.fecha_evaluacion }}</td>
-          <td>{{ c.fecha_vencimiento|default:"—" }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <p class="empty-state">
-    No hay competencias registradas{% if area_f or estado_f %} con los filtros aplicados{% endif %}.
-    {% if not area_f and not estado_f %}
-    Crea la primera desde el <a href="/admin/">panel de administración</a>.
-    {% endif %}
-  </p>
-  {% endif %}
-
-</div>
-
-<!-- Modal Nueva Competencia -->
-<div class="modal-overlay" id="modal-competencia" style="display:{% if show_modal %}grid{% else %}none{% endif %}">
-  <div class="box" role="dialog" aria-modal="true" style="max-width:680px">
-    <div class="stack" style="justify-content:space-between;margin-bottom:14px">
-      <h3 style="margin:0">Nueva Competencia</h3>
-      <button class="btn" onclick="closeModal('modal-competencia')" aria-label="Cerrar">✖</button>
+  <!-- Tabla -->
+  <div class="cmp-card">
+    <div class="cmp-card-head">
+      <h2 class="cmp-card-title" style="margin:0">Competencias del Personal</h2>
+      <div>{{ competencias|length }} competencia{{ competencias|length|pluralize:"s" }}</div>
     </div>
-    <form method="post">
-      {% csrf_token %}
-      <div class="row">
-        <div class="field col-12">
-          <label>Nombre *</label>
-          {{ form.nombre }}
-          {% if form.nombre.errors %}<span class="form-error">{{ form.nombre.errors.0 }}</span>{% endif %}
-        </div>
-        <div class="field col-12">
-          <label>Descripción</label>
-          {{ form.descripcion }}
-        </div>
-        <div class="field col-6">
-          <label>Área *</label>
-          {{ form.area }}
-        </div>
-        <div class="field col-6">
-          <label>Responsable *</label>
-          {{ form.responsable }}
-        </div>
-        <div class="field col-4">
-          <label>Nivel Requerido</label>
-          {{ form.nivel_requerido }}
-        </div>
-        <div class="field col-4">
-          <label>Nivel Actual</label>
-          {{ form.nivel_actual }}
-        </div>
-        <div class="field col-4">
-          <label>Estado</label>
-          {{ form.estado }}
-        </div>
-        <div class="field col-6">
-          <label>Fecha Evaluación *</label>
-          {{ form.fecha_evaluacion }}
-          {% if form.fecha_evaluacion.errors %}<span class="form-error">{{ form.fecha_evaluacion.errors.0 }}</span>{% endif %}
-        </div>
-        <div class="field col-6">
-          <label>Vencimiento</label>
-          {{ form.fecha_vencimiento }}
-        </div>
+
+    {% if competencias %}
+    <div class="cmp-table">
+      <div class="cmp-thead" style="grid-template-columns:1.4fr 1fr .8fr .7fr .7fr .7fr .7fr .8fr">
+        <div>Nombre</div>
+        <div>Área</div>
+        <div>Responsable</div>
+        <div>Requerido</div>
+        <div>Actual</div>
+        <div>Brecha</div>
+        <div>Estado</div>
+        <div>Vencimiento</div>
       </div>
-      <div class="stack" style="justify-content:flex-end;gap:8px;margin-top:16px">
-        <button type="button" class="btn" onclick="closeModal('modal-competencia')">Cancelar</button>
-        <button type="submit" class="btn ok">💾 Guardar</button>
+
+      {% for c in competencias %}
+      <div class="cmp-row" style="grid-template-columns:1.4fr 1fr .8fr .7fr .7fr .7fr .7fr .8fr">
+        <div class="cmp-cell cmp-strong">
+          {{ c.nombre }}
+          {% if c.descripcion %}
+          <div class="cmp-muted">{{ c.descripcion|truncatewords:8 }}</div>
+          {% endif %}
+        </div>
+        <div class="cmp-cell">{{ c.area }}</div>
+        <div class="cmp-cell">{{ c.responsable }}</div>
+        <div class="cmp-cell cmp-strong">{{ c.nivel_requerido }}</div>
+        <div class="cmp-cell cmp-strong {% if c.cumple %}cmp-green{% else %}cmp-red{% endif %}">{{ c.nivel_actual }}</div>
+        <div class="cmp-cell">
+          {% if c.brecha > 0 %}
+          <span class="cmp-pill cmp-pill-red">-{{ c.brecha }}</span>
+          {% else %}
+          <span class="cmp-pill cmp-pill-green">+{{ c.brecha|cut:"-" }}</span>
+          {% endif %}
+        </div>
+        <div class="cmp-cell">
+          <span class="cmp-pill {% if c.estado == 'vigente' %}cmp-pill-green{% elif c.estado == 'por_vencer' %}cmp-pill-orange{% else %}cmp-pill-red{% endif %}">
+            {{ c.get_estado_display }}
+          </span>
+        </div>
+        <div class="cmp-cell cmp-muted">{{ c.fecha_vencimiento|default:"—" }}</div>
       </div>
-    </form>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="text-align:center;color:#64748b;padding:40px">No se encontraron competencias.</p>
+    {% endif %}
   </div>
+
+  <!-- Modal: Nueva Competencia -->
+  <div class="cmp-modal{% if show_modal %} is-open{% endif %}" id="cmpModal" aria-hidden="{% if show_modal %}false{% else %}true{% endif %}">
+    <div class="cmp-backdrop" id="cmpBackdrop"></div>
+
+    <div class="cmp-dialog" role="dialog" aria-modal="true" aria-labelledby="cmpModalTitle">
+      <div class="cmp-dialog-header">
+        <h3 class="cmp-dialog-title" id="cmpModalTitle">Nueva Competencia</h3>
+        <button class="cmp-close" type="button" id="cmpCloseBtn" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="cmp-dialog-body">
+        <form method="post" id="cmpForm">
+          {% csrf_token %}
+          <div class="cmp-form-grid">
+            <div class="cmp-field cmp-span-2">
+              <label class="cmp-label">{{ form.nombre.label }}</label>
+              {{ form.nombre }}
+              {% if form.nombre.errors %}<span style="font-size:12px;color:#dc2626">{{ form.nombre.errors.0 }}</span>{% endif %}
+            </div>
+            <div class="cmp-field cmp-span-2">
+              <label class="cmp-label">{{ form.descripcion.label }}</label>
+              {{ form.descripcion }}
+            </div>
+            <div class="cmp-field">
+              <label class="cmp-label">{{ form.area.label }}</label>
+              {{ form.area }}
+            </div>
+            <div class="cmp-field">
+              <label class="cmp-label">{{ form.responsable.label }}</label>
+              {{ form.responsable }}
+            </div>
+            <div class="cmp-field">
+              <label class="cmp-label">{{ form.nivel_requerido.label }}</label>
+              {{ form.nivel_requerido }}
+            </div>
+            <div class="cmp-field">
+              <label class="cmp-label">{{ form.nivel_actual.label }}</label>
+              {{ form.nivel_actual }}
+            </div>
+            <div class="cmp-field">
+              <label class="cmp-label">{{ form.estado.label }}</label>
+              {{ form.estado }}
+            </div>
+            <div class="cmp-field">
+              <label class="cmp-label">{{ form.fecha_evaluacion.label }}</label>
+              {{ form.fecha_evaluacion }}
+            </div>
+            <div class="cmp-field">
+              <label class="cmp-label">{{ form.fecha_vencimiento.label }}</label>
+              {{ form.fecha_vencimiento }}
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="cmp-dialog-footer">
+        <button class="cmp-btn cmp-btn-ghost" type="button" id="cmpCancelBtn">Cancelar</button>
+        <button class="cmp-btn cmp-btn-success" type="submit" form="cmpForm">💾 Guardar Competencia</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-{% block header_scripts %}
-document.getElementById('newItem').onclick   = () => openModal('modal-competencia');
-document.getElementById('exportCsv').onclick  = () => window.location = '{% url "exportar_competencias" %}';
-document.getElementById('quickReport').onclick = () => window.location = '{% url "exportar_competencias" %}';
-{% endblock %}
+<script>
+(function () {
+  const openBtn  = document.getElementById('cmpOpenModalBtn');
+  const modal    = document.getElementById('cmpModal');
+  const closeBtn = document.getElementById('cmpCloseBtn');
+  const cancelBtn = document.getElementById('cmpCancelBtn');
+  const backdrop = document.getElementById('cmpBackdrop');
+
+  function openModal()  { modal.classList.add('is-open');    modal.setAttribute('aria-hidden', 'false'); }
+  function closeModal() { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true'); }
+
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  backdrop?.addEventListener('click', closeModal);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal(); });
+
+  window.addEventListener('sigcs:nuevo', openModal);
+  window.addEventListener('sigcs:exportar', () => { window.location = '{% url "exportar_competencias" %}'; });
+})();
+</script>
 
 {% endblock %}

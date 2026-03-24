@@ -1,219 +1,218 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Avance de Obra | SIGCS{% endblock %}
-{% block nav_avance %}active{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/avance_obra.css' %}">
 
-<!-- Encabezado -->
-<div class="page-header">
-  <div>
-    <h2 class="page-title">🏗️ Avance de Obra</h2>
-    <p class="page-sub">Seguimiento del progreso por proyecto y fase</p>
-  </div>
-  <button class="btn primary" onclick="openModal('modal-obra')">➕ Nueva Obra</button>
-</div>
+<div class="ao-page">
 
-<!-- KPI Cards -->
-<div class="dashboard-grid" style="margin-bottom:20px">
-
-  <div class="card indicator-card">
-    <div class="kpi">
-      <div>🏗️</div>
-      <div style="flex:1">
-        <h3>Total Obras</h3>
-        <div class="v">{{ total_obras }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Registradas en el sistema</div>
+  <!-- Toolbar -->
+  <div class="ao-toolbar">
+    <button class="ao-btn ao-btn-primary" type="button" id="aoOpenModalBtn">➕ Registrar Obra</button>
+    <select class="ao-select" id="aoFiltroEstado">
+      <option value="">Todos los estados</option>
+      <option>activo</option>
+      <option>finalizado</option>
+      <option>retrasado</option>
+    </select>
+    <input class="ao-input" type="text" id="aoBuscar" placeholder="Buscar por nombre o responsable…">
   </div>
 
-  <div class="card indicator-card {% if obras_activas > 0 %}success{% endif %}">
-    <div class="kpi">
-      <div>▶️</div>
-      <div style="flex:1">
-        <h3>En Progreso</h3>
-        <div class="v">{{ obras_activas }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Obras activas</div>
-  </div>
+  <div class="ao-grid">
 
-  <div class="card indicator-card {% if obras_finalizadas > 0 %}success{% endif %}">
-    <div class="kpi">
-      <div>✅</div>
-      <div style="flex:1">
-        <h3>Finalizadas</h3>
-        <div class="v">{{ obras_finalizadas }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Obras completadas</div>
-  </div>
+    <!-- Tabla principal -->
+    <section class="ao-card">
+      <h2 class="ao-card-title">Registro de Avances</h2>
 
-  <div class="card indicator-card {% if obras_retrasadas > 0 %}critical{% endif %}">
-    <div class="kpi">
-      <div>⏰</div>
-      <div style="flex:1">
-        <h3>Retrasadas</h3>
-        <div class="v">{{ obras_retrasadas }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Requieren atención</div>
-  </div>
+      {% if obras %}
+      <div class="ao-table">
+        <div class="ao-thead">
+          <div>Proyecto</div>
+          <div>Responsable</div>
+          <div>Físico Programado</div>
+          <div>Físico Real</div>
+          <div>Desviación</div>
+          <div>Estado</div>
+          <div>Fin Programado</div>
+          <div class="ao-th-actions">Acciones</div>
+        </div>
 
-</div>
-
-<!-- Avance promedio global -->
-<div class="card" style="margin-bottom:20px">
-  <h3>Avance Promedio Global</h3>
-  <div class="global-progress-wrap">
-    <div class="global-progress-bar">
-      <div class="global-progress-fill" style="width:{{ avance_promedio }}%"></div>
-    </div>
-    <span class="global-progress-label">{{ avance_promedio }}%</span>
-  </div>
-</div>
-
-<!-- Tabla de obras -->
-<div class="card">
-  <div class="data-table-controls">
-    <h3 style="margin:0">Listado de Obras</h3>
-    <a href="{% url 'exportar_avance_obra' %}" class="btn ok">⬇️ Exportar CSV</a>
-  </div>
-
-  {% if obras %}
-  <div class="table-wrapper">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Proyecto</th>
-          <th>Responsable</th>
-          <th>Avance Real</th>
-          <th>Progreso</th>
-          <th>Fecha Fin</th>
-          <th>Estado</th>
-        </tr>
-      </thead>
-      <tbody>
         {% for obra in obras %}
-
-        <!-- Fila de la obra -->
-        <tr class="obra-row">
-          <td>
-            <strong>{{ obra.nombre }}</strong>
+        <div class="ao-row">
+          <div class="ao-cell ao-strong">
+            {{ obra.nombre }}
             {% if obra.descripcion %}
-            <br><span class="muted" style="font-size:12px">{{ obra.descripcion|truncatewords:10 }}</span>
+            <div style="font-size:12px;font-weight:400;color:#64748b;margin-top:2px">{{ obra.descripcion|truncatewords:8 }}</div>
             {% endif %}
-          </td>
-          <td>{{ obra.responsable }}</td>
-          <td>
-            <strong>{{ obra.avance_real }}%</strong>
-            <span class="muted"> / {{ obra.avance_programado }}%</span>
-          </td>
-          <td style="min-width:160px">
-            <div class="bar">
-              <i data-bar="{{ obra.avance_real }}" class="{% if obra.avance_real >= obra.avance_programado %}bar-ok{% else %}bar-warn{% endif %}"></i>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:2px" class="muted">
-              <span>Real</span><span>Meta</span>
-            </div>
-          </td>
-          <td>{{ obra.fecha_fin_programada }}</td>
-          <td>
-            <span class="estado-badge estado-{{ obra.estado }}">{{ obra.get_estado_display }}</span>
-          </td>
-        </tr>
+          </div>
+          <div class="ao-cell">{{ obra.responsable }}</div>
+          <div class="ao-cell">{{ obra.avance_programado }}%</div>
+          <div class="ao-cell ao-strong">{{ obra.avance_real }}%</div>
+          <div class="ao-cell">
+            {% with dev=obra.avance_real|add:"-0" %}
+            {% if obra.avance_real >= obra.avance_programado %}
+            <span class="ao-badge ao-badge-ok">+{{ obra.avance_real|add:"-"|add:obra.avance_programado|floatformat:0 }}%</span>
+            {% else %}
+            <span class="ao-badge ao-badge-bad">{{ obra.avance_programado|add:"-"|add:obra.avance_real|floatformat:0 }}%</span>
+            {% endif %}
+            {% endwith %}
+          </div>
+          <div class="ao-cell">
+            <span class="ao-badge {% if obra.estado == 'activo' %}ao-badge-ok{% elif obra.estado == 'retrasado' %}ao-badge-bad{% else %}ao-badge-warn{% endif %}">
+              {{ obra.get_estado_display }}
+            </span>
+          </div>
+          <div class="ao-cell">{{ obra.fecha_fin_programada }}</div>
+          <div class="ao-cell ao-actions">
+            <button class="ao-icon-btn" type="button" title="Ver fases">📋</button>
+            <button class="ao-icon-btn ao-icon-btn-blue" type="button" title="Gráfico">📊</button>
+          </div>
+        </div>
 
-        <!-- Fases de la obra -->
+        <!-- Fases -->
         {% if obra.fases.all %}
-        <tr class="fases-row">
-          <td colspan="6">
-            <div class="fases-grid">
-              {% for fase in obra.fases.all %}
-              <div class="fase-card">
-                <div class="fase-header">
-                  <span class="fase-nombre">{{ fase.nombre }}</span>
-                  <span class="estado-badge estado-{{ fase.estado }}">{{ fase.get_estado_display }}</span>
-                </div>
-                <div class="bar">
-                  <i data-bar="{{ fase.avance_real }}" class="{% if fase.avance_real >= fase.avance_programado %}bar-ok{% else %}bar-warn{% endif %}"></i>
-                </div>
-                <div class="fase-meta">
-                  <span>Real: <strong>{{ fase.avance_real }}%</strong></span>
-                  <span>Meta: {{ fase.avance_programado }}%</span>
-                  <span>Fin: {{ fase.fecha_fin_programada }}</span>
-                </div>
-              </div>
-              {% endfor %}
+        <div style="background:#f0f4ff;border:1px solid #dbeafe;border-radius:14px;padding:12px;margin-top:6px;display:flex;gap:10px;flex-wrap:wrap">
+          {% for fase in obra.fases.all %}
+          <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px;min-width:160px;flex:1">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-weight:900;font-size:13px">{{ fase.nombre }}</span>
+              <span class="ao-badge {% if fase.estado == 'completada' %}ao-badge-ok{% elif fase.estado == 'retrasada' %}ao-badge-bad{% else %}ao-badge-warn{% endif %}" style="font-size:11px">{{ fase.get_estado_display }}</span>
             </div>
-          </td>
-        </tr>
+            <div style="height:6px;background:#e5e7eb;border-radius:999px;overflow:hidden">
+              <div style="height:100%;background:{% if fase.avance_real >= fase.avance_programado %}#16a34a{% else %}#d97706{% endif %};border-radius:999px;width:{{ fase.avance_real }}%"></div>
+            </div>
+            <div style="font-size:11px;color:#64748b;margin-top:4px">Real: {{ fase.avance_real }}% / Meta: {{ fase.avance_programado }}%</div>
+          </div>
+          {% endfor %}
+        </div>
         {% endif %}
 
         {% endfor %}
-      </tbody>
-    </table>
+      </div>
+      {% else %}
+      <p style="text-align:center;color:#64748b;padding:40px">No hay obras registradas.</p>
+      {% endif %}
+    </section>
+
+    <!-- Resumen lateral -->
+    <aside class="ao-card">
+      <h2 class="ao-card-title">Resumen General</h2>
+
+      <div class="ao-stats">
+        <div class="ao-stat">
+          <div class="ao-stat-label">Total Obras</div>
+          <div class="ao-stat-value ao-blue">{{ total_obras }}</div>
+        </div>
+        <div class="ao-stat">
+          <div class="ao-stat-label">Activas</div>
+          <div class="ao-stat-value ao-green">{{ obras_activas }}</div>
+        </div>
+        <div class="ao-stat">
+          <div class="ao-stat-label">Finalizadas</div>
+          <div class="ao-stat-value ao-blue">{{ obras_finalizadas }}</div>
+        </div>
+        <div class="ao-stat">
+          <div class="ao-stat-label">Retrasadas</div>
+          <div class="ao-stat-value ao-red">{{ obras_retrasadas }}</div>
+        </div>
+      </div>
+
+      <div class="ao-divider"></div>
+
+      <h3 class="ao-subtitle">Avance Promedio Global</h3>
+      <div class="ao-profile">
+        <div style="font-size:32px;font-weight:1000;color:#16a34a;margin-bottom:8px">{{ avance_promedio }}%</div>
+        <div style="height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden">
+          <div style="height:100%;background:#16a34a;border-radius:999px;width:{{ avance_promedio }}%"></div>
+        </div>
+      </div>
+
+      <button class="ao-btn ao-btn-success ao-btn-block" type="button" style="margin-top:14px"
+              onclick="window.location='{% url 'exportar_avance_obra' %}'">
+        ⬇️ Generar Reporte CSV
+      </button>
+    </aside>
+
   </div>
 
-  {% else %}
-  <p class="empty-state">
-    No hay obras registradas. Crea la primera desde el
-    <a href="/admin/">panel de administración</a>.
-  </p>
-  {% endif %}
+  <!-- Modal: Nueva Obra -->
+  <div class="ao-modal{% if show_modal %} is-open{% endif %}" id="aoModal" aria-hidden="{% if show_modal %}false{% else %}true{% endif %}">
+    <div class="ao-modal-backdrop" id="aoModalBackdrop"></div>
 
-</div>
+    <div class="ao-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="aoModalTitle">
+      <div class="ao-modal-header">
+        <h3 class="ao-modal-title" id="aoModalTitle">Nueva Obra / Proyecto</h3>
+        <button class="ao-modal-close" type="button" id="aoCloseModalBtn" aria-label="Cerrar">✕</button>
+      </div>
 
-<!-- Modal Nueva Obra -->
-<div class="modal-overlay" id="modal-obra" style="display:{% if show_modal %}grid{% else %}none{% endif %}">
-  <div class="box" role="dialog" aria-modal="true" style="max-width:600px">
-    <div class="stack" style="justify-content:space-between;margin-bottom:14px">
-      <h3 style="margin:0">Nueva Obra / Proyecto</h3>
-      <button class="btn" onclick="closeModal('modal-obra')" aria-label="Cerrar">✖</button>
+      <div class="ao-modal-body">
+        <form method="post" id="aoForm">
+          {% csrf_token %}
+          <div class="ao-form-grid">
+            <div class="ao-field">
+              <label class="ao-label">{{ form.nombre.label }} *</label>
+              {{ form.nombre }}
+              {% if form.nombre.errors %}<span style="font-size:12px;color:#dc2626">{{ form.nombre.errors.0 }}</span>{% endif %}
+            </div>
+            <div class="ao-field">
+              <label class="ao-label">{{ form.responsable.label }} *</label>
+              {{ form.responsable }}
+            </div>
+            <div class="ao-field">
+              <label class="ao-label">{{ form.estado.label }}</label>
+              {{ form.estado }}
+            </div>
+            <div class="ao-field">
+              <label class="ao-label">{{ form.fecha_inicio.label }} *</label>
+              {{ form.fecha_inicio }}
+              {% if form.fecha_inicio.errors %}<span style="font-size:12px;color:#dc2626">{{ form.fecha_inicio.errors.0 }}</span>{% endif %}
+            </div>
+            <div class="ao-field">
+              <label class="ao-label">{{ form.fecha_fin_programada.label }} *</label>
+              {{ form.fecha_fin_programada }}
+              {% if form.fecha_fin_programada.errors %}<span style="font-size:12px;color:#dc2626">{{ form.fecha_fin_programada.errors.0 }}</span>{% endif %}
+            </div>
+            <div class="ao-field" style="grid-column:span 3">
+              <label class="ao-label">{{ form.descripcion.label }}</label>
+              {{ form.descripcion }}
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="ao-modal-footer">
+        <button class="ao-btn ao-btn-ghost" type="button" id="aoCancelBtn">Cancelar</button>
+        <button class="ao-btn ao-btn-success" type="submit" form="aoForm">💾 Guardar Obra</button>
+      </div>
     </div>
-    <form method="post">
-      {% csrf_token %}
-      <div class="row">
-        <div class="field col-12">
-          <label>Nombre *</label>
-          {{ form.nombre }}
-          {% if form.nombre.errors %}<span class="form-error">{{ form.nombre.errors.0 }}</span>{% endif %}
-        </div>
-        <div class="field col-12">
-          <label>Descripción</label>
-          {{ form.descripcion }}
-        </div>
-        <div class="field col-6">
-          <label>Responsable *</label>
-          {{ form.responsable }}
-        </div>
-        <div class="field col-6">
-          <label>Estado</label>
-          {{ form.estado }}
-        </div>
-        <div class="field col-6">
-          <label>Fecha Inicio *</label>
-          {{ form.fecha_inicio }}
-          {% if form.fecha_inicio.errors %}<span class="form-error">{{ form.fecha_inicio.errors.0 }}</span>{% endif %}
-        </div>
-        <div class="field col-6">
-          <label>Fecha Fin Programada *</label>
-          {{ form.fecha_fin_programada }}
-          {% if form.fecha_fin_programada.errors %}<span class="form-error">{{ form.fecha_fin_programada.errors.0 }}</span>{% endif %}
-        </div>
-      </div>
-      <div class="stack" style="justify-content:flex-end;gap:8px;margin-top:16px">
-        <button type="button" class="btn" onclick="closeModal('modal-obra')">Cancelar</button>
-        <button type="submit" class="btn ok">💾 Guardar</button>
-      </div>
-    </form>
   </div>
+
 </div>
 
-{% block header_scripts %}
-document.getElementById('newItem').onclick   = () => openModal('modal-obra');
-document.getElementById('exportCsv').onclick  = () => window.location = '{% url "exportar_avance_obra" %}';
-document.getElementById('quickReport').onclick = () => window.location = '{% url "exportar_avance_obra" %}';
-{% endblock %}
+<script>
+(function () {
+  const openBtn  = document.getElementById('aoOpenModalBtn');
+  const modal    = document.getElementById('aoModal');
+  const closeBtn = document.getElementById('aoCloseModalBtn');
+  const cancelBtn = document.getElementById('aoCancelBtn');
+  const backdrop = document.getElementById('aoModalBackdrop');
+
+  function openModal()  { modal.classList.add('is-open');    modal.setAttribute('aria-hidden', 'false'); }
+  function closeModal() { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true'); }
+
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  backdrop?.addEventListener('click', closeModal);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal(); });
+
+  // Global "Nuevo" from topbar
+  window.addEventListener('sigcs:nuevo', openModal);
+  // Global "Exportar" from topbar
+  window.addEventListener('sigcs:exportar', () => { window.location = '{% url "exportar_avance_obra" %}'; });
+})();
+</script>
 
 {% endblock %}

@@ -17,7 +17,6 @@ urlpatterns = [
     path('usuarios/<int:pk>/eliminar/', views.usuario_eliminar, name='usuario_eliminar'),
     path('permisos/',                   views.permisos,         name='permisos'),
     path('permisos/<int:pk>/eliminar/', views.grupo_eliminar,   name='grupo_eliminar'),
-    path('configuracion/',              views.configuracion,    name='configuracion'),
 
     # Exportaciones CSV
     path('avance-obra/exportar/', views.exportar_avance_obra, name='exportar_avance_obra'),

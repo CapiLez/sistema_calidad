@@ -1,227 +1,194 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Auditorías | SIGCS{% endblock %}
-{% block nav_auditorias %}active{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/auditorias.css' %}">
 
-<div class="page-header">
-  <div>
-    <h2 class="page-title">📋 Auditorías</h2>
-    <p class="page-sub">Planificación y seguimiento de auditorías internas y externas</p>
-  </div>
-  <button class="btn primary" onclick="openModal('modal-auditoria')">➕ Nueva Auditoría</button>
-</div>
+<div class="aud-page">
 
-<!-- KPI Cards -->
-<div class="dashboard-grid" style="margin-bottom:20px">
-
-  <div class="card indicator-card">
-    <div class="kpi">
-      <div>📋</div>
-      <div style="flex:1">
-        <h3>Total Auditorías</h3>
-        <div class="v">{{ total }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Registradas en el sistema</div>
-  </div>
-
-  <div class="card indicator-card">
-    <div class="kpi">
-      <div>🗓️</div>
-      <div style="flex:1">
-        <h3>Programadas</h3>
-        <div class="v">{{ programadas }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Pendientes de ejecución</div>
+  <!-- KPI grid -->
+  <div class="aud-kpi-grid">
+    <article class="aud-kpi">
+      <div class="aud-kpi-head"><div class="aud-kpi-icon">📋</div><div class="aud-kpi-title">Total Auditorías</div></div>
+      <div class="aud-kpi-value">{{ total }}</div>
+      <div class="aud-kpi-note">Registradas</div>
+    </article>
+    <article class="aud-kpi aud-kpi-blue">
+      <div class="aud-kpi-head"><div class="aud-kpi-icon">📅</div><div class="aud-kpi-title">Programadas</div></div>
+      <div class="aud-kpi-value">{{ programadas }}</div>
+      <div class="aud-kpi-note">Por realizarse</div>
+    </article>
+    <article class="aud-kpi aud-kpi-orange">
+      <div class="aud-kpi-head"><div class="aud-kpi-icon">🔄</div><div class="aud-kpi-title">En Curso</div></div>
+      <div class="aud-kpi-value">{{ en_curso }}</div>
+      <div class="aud-kpi-note">En ejecución</div>
+    </article>
+    <article class="aud-kpi aud-kpi-red">
+      <div class="aud-kpi-head"><div class="aud-kpi-icon">🔍</div><div class="aud-kpi-title">Hallazgos Totales</div></div>
+      <div class="aud-kpi-value">{{ total_hallazgos }}</div>
+      <div class="aud-kpi-note">En todas las auditorías</div>
+    </article>
   </div>
 
-  <div class="card indicator-card {% if en_curso > 0 %}success{% endif %}">
-    <div class="kpi">
-      <div>⚙️</div>
-      <div style="flex:1">
-        <h3>En Curso</h3>
-        <div class="v">{{ en_curso }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">En ejecución actualmente</div>
-  </div>
-
-  <div class="card indicator-card">
-    <div class="kpi">
-      <div>🔍</div>
-      <div style="flex:1">
-        <h3>Hallazgos Totales</h3>
-        <div class="v">{{ total_hallazgos }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Acumulado de auditorías</div>
-  </div>
-
-</div>
-
-<!-- Filtros -->
-<form method="get">
-  <div class="toolbar" style="margin-bottom:16px">
-    <select name="tipo" class="filter-select">
-      <option value="">Tipo: Todos</option>
-      <option value="interna"  {% if tipo_f == 'interna' %}selected{% endif %}>Interna</option>
-      <option value="externa"  {% if tipo_f == 'externa' %}selected{% endif %}>Externa</option>
+  <!-- Toolbar / filtros -->
+  <form method="get">
+  <div class="aud-toolbar">
+    <button class="aud-btn aud-btn-primary" type="button" id="audOpenModalBtn">➕ Nueva Auditoría</button>
+    <select class="aud-select" name="tipo">
+      <option value="">Todos los tipos</option>
+      <option value="interna" {% if tipo_f == 'interna' %}selected{% endif %}>Interna</option>
+      <option value="externa" {% if tipo_f == 'externa' %}selected{% endif %}>Externa</option>
+      <option value="seguimiento" {% if tipo_f == 'seguimiento' %}selected{% endif %}>Seguimiento</option>
     </select>
-    <select name="estado" class="filter-select">
-      <option value="">Estado: Todos</option>
-      <option value="programada"  {% if estado_f == 'programada' %}selected{% endif %}>Programada</option>
-      <option value="en_curso"    {% if estado_f == 'en_curso' %}selected{% endif %}>En Curso</option>
-      <option value="finalizada"  {% if estado_f == 'finalizada' %}selected{% endif %}>Finalizada</option>
-      <option value="cancelada"   {% if estado_f == 'cancelada' %}selected{% endif %}>Cancelada</option>
+    <select class="aud-select" name="estado">
+      <option value="">Todos los estados</option>
+      <option value="programada" {% if estado_f == 'programada' %}selected{% endif %}>Programada</option>
+      <option value="en_curso" {% if estado_f == 'en_curso' %}selected{% endif %}>En Curso</option>
+      <option value="finalizada" {% if estado_f == 'finalizada' %}selected{% endif %}>Finalizada</option>
     </select>
-    <button type="submit" class="btn primary">Filtrar</button>
-    {% if tipo_f or estado_f %}
-    <a href="{% url 'auditorias' %}" class="btn">Limpiar</a>
+    <button class="aud-btn aud-btn-ghost" type="submit">🔎 Filtrar</button>
+    <a href="{% url 'auditorias' %}" class="aud-btn aud-btn-ghost">✕ Limpiar</a>
+    <button class="aud-btn aud-btn-ghost" type="button" onclick="window.location='{% url 'exportar_auditorias' %}'">⬇️ Exportar</button>
+  </div>
+  </form>
+
+  <!-- Tabla -->
+  <div class="aud-card">
+    <div class="aud-card-head">
+      <h2 class="aud-card-title" style="margin:0">Registro de Auditorías</h2>
+      <div>{{ auditorias|length }} auditoría{{ auditorias|length|pluralize:"s" }}</div>
+    </div>
+
+    {% if auditorias %}
+    <div class="aud-table">
+      <div class="aud-thead" style="grid-template-columns:1.8fr 1fr .8fr .7fr .7fr .9fr .6fr">
+        <div>Título</div>
+        <div>Proceso</div>
+        <div>Tipo</div>
+        <div>Estado</div>
+        <div>F. Programada</div>
+        <div>Responsable</div>
+        <div>Hallazgos</div>
+      </div>
+
+      {% for a in auditorias %}
+      <div class="aud-row" style="grid-template-columns:1.8fr 1fr .8fr .7fr .7fr .9fr .6fr">
+        <div class="aud-cell aud-strong">
+          {{ a.titulo }}
+          {% if a.observaciones %}
+          <div class="aud-muted">{{ a.observaciones|truncatewords:8 }}</div>
+          {% endif %}
+        </div>
+        <div class="aud-cell">{{ a.proceso.nombre|default:"—" }}</div>
+        <div class="aud-cell"><span class="aud-pill aud-pill-blue">{{ a.get_tipo_display }}</span></div>
+        <div class="aud-cell">
+          <span class="aud-pill {% if a.estado == 'finalizada' %}aud-pill-green{% elif a.estado == 'en_curso' %}aud-pill-blue{% else %}aud-pill-orange{% endif %}">
+            {{ a.get_estado_display }}
+          </span>
+        </div>
+        <div class="aud-cell aud-muted">{{ a.fecha_programada }}</div>
+        <div class="aud-cell">{{ a.responsable }}</div>
+        <div class="aud-cell">
+          {% if a.hallazgos_encontrados > 0 %}
+          <span class="aud-pill aud-pill-orange">{{ a.hallazgos_encontrados }}</span>
+          {% else %}
+          <span class="aud-pill aud-pill-green">0</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="text-align:center;color:#64748b;padding:40px">No se encontraron auditorías.</p>
     {% endif %}
   </div>
-</form>
 
-<!-- Tabla -->
-<div class="card">
-  <div class="data-table-controls">
-    <h3 style="margin:0">Listado de Auditorías</h3>
-    <a href="{% url 'exportar_auditorias' %}" class="btn ok">⬇️ Exportar CSV</a>
-  </div>
+  <!-- Modal: Nueva Auditoría -->
+  <div class="aud-modal{% if show_modal %} is-open{% endif %}" id="audModal" aria-hidden="{% if show_modal %}false{% else %}true{% endif %}">
+    <div class="aud-backdrop" id="audBackdrop"></div>
 
-  {% if auditorias %}
-  <div class="table-wrapper">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Título</th>
-          <th>Tipo</th>
-          <th>Proceso</th>
-          <th>Responsable</th>
-          <th>Estado</th>
-          <th>F. Programada</th>
-          <th>F. Realización</th>
-          <th>Hallazgos</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for a in auditorias %}
-        <tr>
-          <td>
-            <strong>{{ a.titulo }}</strong>
-            {% if a.observaciones %}
-            <br><span class="muted" style="font-size:12px">{{ a.observaciones|truncatewords:8 }}</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if a.tipo == 'interna' %}
-            <span class="chip info">Interna</span>
-            {% else %}
-            <span class="chip purple">Externa</span>
-            {% endif %}
-          </td>
-          <td>{{ a.proceso.nombre|default:"—" }}</td>
-          <td>{{ a.responsable }}</td>
-          <td>
-            {% if a.estado == 'programada' %}
-            <span class="chip warn">Programada</span>
-            {% elif a.estado == 'en_curso' %}
-            <span class="chip info">En Curso</span>
-            {% elif a.estado == 'finalizada' %}
-            <span class="chip ok">Finalizada</span>
-            {% else %}
-            <span class="chip danger">Cancelada</span>
-            {% endif %}
-          </td>
-          <td>{{ a.fecha_programada }}</td>
-          <td>{{ a.fecha_realizacion|default:"—" }}</td>
-          <td>
-            {% if a.hallazgos_encontrados > 0 %}
-            <span class="chip {% if a.hallazgos_encontrados >= 5 %}danger{% else %}warn{% endif %}">
-              {{ a.hallazgos_encontrados }}
-            </span>
-            {% else %}
-            <span class="muted">0</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <p class="empty-state">
-    No hay auditorías registradas{% if tipo_f or estado_f %} con los filtros aplicados{% endif %}.
-    {% if not tipo_f and not estado_f %}
-    Crea la primera desde el <a href="/admin/">panel de administración</a>.
-    {% endif %}
-  </p>
-  {% endif %}
+    <div class="aud-dialog" role="dialog" aria-modal="true" aria-labelledby="audModalTitle">
+      <div class="aud-dialog-header">
+        <h3 class="aud-dialog-title" id="audModalTitle">Nueva Auditoría</h3>
+        <button class="aud-close" type="button" id="audCloseBtn" aria-label="Cerrar">✕</button>
+      </div>
 
-</div>
+      <div class="aud-dialog-body">
+        <form method="post" id="audForm">
+          {% csrf_token %}
+          <div class="aud-form-grid">
+            <div class="aud-field aud-span-2">
+              <label class="aud-label">{{ form.titulo.label }}</label>
+              {{ form.titulo }}
+              {% if form.titulo.errors %}<span style="font-size:12px;color:#dc2626">{{ form.titulo.errors.0 }}</span>{% endif %}
+            </div>
+            <div class="aud-field">
+              <label class="aud-label">{{ form.tipo.label }}</label>
+              {{ form.tipo }}
+            </div>
+            <div class="aud-field">
+              <label class="aud-label">{{ form.estado.label }}</label>
+              {{ form.estado }}
+            </div>
+            <div class="aud-field">
+              <label class="aud-label">{{ form.proceso.label }}</label>
+              {{ form.proceso }}
+            </div>
+            <div class="aud-field">
+              <label class="aud-label">{{ form.responsable.label }}</label>
+              {{ form.responsable }}
+            </div>
+            <div class="aud-field">
+              <label class="aud-label">{{ form.fecha_programada.label }}</label>
+              {{ form.fecha_programada }}
+            </div>
+            <div class="aud-field">
+              <label class="aud-label">{{ form.fecha_realizacion.label }}</label>
+              {{ form.fecha_realizacion }}
+            </div>
+            <div class="aud-field">
+              <label class="aud-label">{{ form.hallazgos_encontrados.label }}</label>
+              {{ form.hallazgos_encontrados }}
+            </div>
+            <div class="aud-field aud-span-2">
+              <label class="aud-label">{{ form.observaciones.label }}</label>
+              {{ form.observaciones }}
+            </div>
+          </div>
+        </form>
+      </div>
 
-<!-- Modal Nueva Auditoría -->
-<div class="modal-overlay" id="modal-auditoria" style="display:{% if show_modal %}grid{% else %}none{% endif %}">
-  <div class="box" role="dialog" aria-modal="true" style="max-width:680px">
-    <div class="stack" style="justify-content:space-between;margin-bottom:14px">
-      <h3 style="margin:0">Nueva Auditoría</h3>
-      <button class="btn" onclick="closeModal('modal-auditoria')" aria-label="Cerrar">✖</button>
+      <div class="aud-dialog-footer">
+        <button class="aud-btn aud-btn-ghost" type="button" id="audCancelBtn">Cancelar</button>
+        <button class="aud-btn aud-btn-success" type="submit" form="audForm">💾 Guardar Auditoría</button>
+      </div>
     </div>
-    <form method="post">
-      {% csrf_token %}
-      <div class="row">
-        <div class="field col-12">
-          <label>Título *</label>
-          {{ form.titulo }}
-          {% if form.titulo.errors %}<span class="form-error">{{ form.titulo.errors.0 }}</span>{% endif %}
-        </div>
-        <div class="field col-6">
-          <label>Tipo</label>
-          {{ form.tipo }}
-        </div>
-        <div class="field col-6">
-          <label>Estado</label>
-          {{ form.estado }}
-        </div>
-        <div class="field col-6">
-          <label>Proceso</label>
-          {{ form.proceso }}
-        </div>
-        <div class="field col-6">
-          <label>Responsable *</label>
-          {{ form.responsable }}
-        </div>
-        <div class="field col-6">
-          <label>Fecha Programada *</label>
-          {{ form.fecha_programada }}
-        </div>
-        <div class="field col-6">
-          <label>Fecha Realización</label>
-          {{ form.fecha_realizacion }}
-        </div>
-        <div class="field col-12">
-          <label>Hallazgos Encontrados</label>
-          {{ form.hallazgos_encontrados }}
-        </div>
-        <div class="field col-12">
-          <label>Observaciones</label>
-          {{ form.observaciones }}
-        </div>
-      </div>
-      <div class="stack" style="justify-content:flex-end;gap:8px;margin-top:16px">
-        <button type="button" class="btn" onclick="closeModal('modal-auditoria')">Cancelar</button>
-        <button type="submit" class="btn ok">💾 Guardar</button>
-      </div>
-    </form>
   </div>
+
 </div>
 
-{% block header_scripts %}
-document.getElementById('newItem').onclick   = () => openModal('modal-auditoria');
-document.getElementById('exportCsv').onclick  = () => window.location = '{% url "exportar_auditorias" %}';
-document.getElementById('quickReport').onclick = () => window.location = '{% url "exportar_auditorias" %}';
-{% endblock %}
+<script>
+(function () {
+  const openBtn  = document.getElementById('audOpenModalBtn');
+  const modal    = document.getElementById('audModal');
+  const closeBtn = document.getElementById('audCloseBtn');
+  const cancelBtn = document.getElementById('audCancelBtn');
+  const backdrop = document.getElementById('audBackdrop');
+
+  function openModal()  { modal.classList.add('is-open');    modal.setAttribute('aria-hidden', 'false'); }
+  function closeModal() { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true'); }
+
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  backdrop?.addEventListener('click', closeModal);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal(); });
+
+  window.addEventListener('sigcs:nuevo', openModal);
+  window.addEventListener('sigcs:exportar', () => { window.location = '{% url "exportar_auditorias" %}'; });
+})();
+</script>
 
 {% endblock %}

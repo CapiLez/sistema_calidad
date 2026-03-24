@@ -1,84 +1,99 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Permisos | SIGCS{% endblock %}
-{% block nav_permisos %}active{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/hallazgos.css' %}">
 
-<div class="stats-grid" style="margin-bottom:16px">
-  <div class="stat-card">
-    <div class="stat-label">Total Grupos</div>
-    <div class="stat-value">{{ grupos|length }}</div>
-  </div>
-</div>
+<div class="hl-page">
 
-<div class="card">
-  <div class="stack" style="justify-content:space-between;margin-bottom:14px">
-    <h3 style="margin:0">🔐 Grupos y Roles</h3>
-    <button class="btn ok" onclick="openModal('modal-crear-grupo')">➕ Nuevo Grupo</button>
-  </div>
-
-  <div class="table-wrapper">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Nombre del Grupo</th>
-          <th>Miembros</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for grupo in grupos %}
-        <tr>
-          <td><strong>{{ grupo.name }}</strong></td>
-          <td>
-            {% for u in grupo.user_set.all %}
-            <span class="chip">{{ u.username }}</span>
-            {% empty %}
-            <span class="muted">Sin miembros</span>
-            {% endfor %}
-          </td>
-          <td>
-            <form method="post" action="{% url 'grupo_eliminar' grupo.pk %}" style="display:inline"
-                  onsubmit="return confirm('¿Eliminar grupo {{ grupo.name }}?')">
-              {% csrf_token %}
-              <button type="submit" class="btn danger" style="font-size:12px">🗑️ Eliminar</button>
-            </form>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="3" class="empty-state">No hay grupos creados. Los grupos permiten asignar permisos colectivos a usuarios.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Modal Crear Grupo -->
-<div class="modal-overlay" id="modal-crear-grupo"
-     style="display:{% if show_modal %}grid{% else %}none{% endif %}">
-  <div class="box" role="dialog" aria-modal="true" style="max-width:400px;width:100%">
-    <div class="stack" style="justify-content:space-between;margin-bottom:16px">
-      <h3 style="margin:0">Nuevo Grupo</h3>
-      <button class="btn" onclick="closeModal('modal-crear-grupo')" aria-label="Cerrar">✖</button>
+  <div class="hl-card">
+    <div class="hl-card-head">
+      <h2 class="hl-card-title" style="margin:0">🔐 Grupos y Roles</h2>
+      <button class="hl-btn hl-btn-primary" type="button" id="grpOpenModalBtn">➕ Nuevo Grupo</button>
     </div>
 
-    <form method="post">
-      {% csrf_token %}
-      <div class="row">
-        <div class="field col-12">
-          <label>{{ form.name.label }}</label>
-          {{ form.name }}
-          {% if form.name.errors %}<span style="color:var(--danger);font-size:12px">{{ form.name.errors.0 }}</span>{% endif %}
-        </div>
+    {% if grupos %}
+    <div class="hl-table">
+      <div class="hl-thead" style="grid-template-columns:1.5fr 2fr 1fr">
+        <div>Nombre del Grupo</div>
+        <div>Miembros</div>
+        <div>Acciones</div>
       </div>
 
-      <div class="stack" style="justify-content:flex-end;gap:8px;margin-top:16px">
-        <button type="button" class="btn" onclick="closeModal('modal-crear-grupo')">Cancelar</button>
-        <button type="submit" class="btn ok">Crear Grupo</button>
+      {% for grupo in grupos %}
+      <div class="hl-row" style="grid-template-columns:1.5fr 2fr 1fr">
+        <div class="hl-cell hl-strong">{{ grupo.name }}</div>
+        <div class="hl-cell" style="display:flex;gap:6px;flex-wrap:wrap">
+          {% for u in grupo.user_set.all %}
+          <span class="hl-pill" style="background:rgba(37,99,235,.10);border-color:rgba(37,99,235,.18);color:#1d4ed8">{{ u.username }}</span>
+          {% empty %}
+          <span class="hl-muted">Sin miembros</span>
+          {% endfor %}
+        </div>
+        <div class="hl-cell">
+          <form method="post" action="{% url 'grupo_eliminar' grupo.pk %}" style="display:inline"
+                onsubmit="return confirm('¿Eliminar grupo {{ grupo.name }}?')">
+            {% csrf_token %}
+            <button type="submit" class="hl-btn hl-btn-primary" style="padding:8px 10px;font-size:12px;background:#dc2626;border-color:#dc2626">🗑️ Eliminar</button>
+          </form>
+        </div>
       </div>
-    </form>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="text-align:center;color:#64748b;padding:40px">No hay grupos creados. Los grupos permiten asignar permisos colectivos a usuarios.</p>
+    {% endif %}
   </div>
+
+  <!-- Modal: Nuevo Grupo -->
+  <div class="hl-modal{% if show_modal %} is-open{% endif %}" id="grpModal" aria-hidden="{% if show_modal %}false{% else %}true{% endif %}">
+    <div class="hl-backdrop" id="grpBackdrop"></div>
+
+    <div class="hl-dialog" style="max-width:420px" role="dialog" aria-modal="true" aria-labelledby="grpModalTitle">
+      <div class="hl-dialog-header">
+        <h3 class="hl-dialog-title" id="grpModalTitle">Nuevo Grupo</h3>
+        <button class="hl-close" type="button" id="grpCloseBtn" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="hl-dialog-body">
+        <form method="post" id="grpForm">
+          {% csrf_token %}
+          <div class="hl-field" style="margin-bottom:16px">
+            <label class="hl-label">{{ form.name.label }}</label>
+            {{ form.name }}
+            {% if form.name.errors %}<span style="font-size:12px;color:#dc2626">{{ form.name.errors.0 }}</span>{% endif %}
+          </div>
+        </form>
+      </div>
+
+      <div class="hl-dialog-footer">
+        <button class="hl-btn hl-btn-ghost" type="button" id="grpCancelBtn">Cancelar</button>
+        <button class="hl-btn hl-btn-success" type="submit" form="grpForm">💾 Crear Grupo</button>
+      </div>
+    </div>
+  </div>
+
 </div>
+
+<script>
+(function () {
+  const openBtn  = document.getElementById('grpOpenModalBtn');
+  const modal    = document.getElementById('grpModal');
+  const closeBtn = document.getElementById('grpCloseBtn');
+  const cancelBtn = document.getElementById('grpCancelBtn');
+  const backdrop = document.getElementById('grpBackdrop');
+
+  function openModal()  { modal.classList.add('is-open');    modal.setAttribute('aria-hidden', 'false'); }
+  function closeModal() { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true'); }
+
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  backdrop?.addEventListener('click', closeModal);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal(); });
+})();
+</script>
 
 {% endblock %}

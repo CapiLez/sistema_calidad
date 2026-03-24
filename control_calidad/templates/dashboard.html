@@ -1,242 +1,284 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Dashboard | SIGCS{% endblock %}
-{% block nav_dashboard %}active{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 
-<div class="dashboard-grid">
+<div class="dsh-page">
 
-  <!-- Índice de Cumplimiento -->
-  <div class="card indicator-card success">
-    <div class="kpi">
-      <div>✅</div>
-      <div style="flex:1">
-        <h3>Índice de Cumplimiento Global</h3>
-        <div class="v">{{ cumplimiento_global }}%</div>
-        <div class="bar" style="margin-top:8px">
-          <i data-bar="{{ cumplimiento_bar }}"></i>
+  <!-- KPI cards -->
+  <div class="dsh-kpi-grid">
+
+    <article class="dsh-kpi dsh-kpi-green">
+      <div class="dsh-kpi-head">
+        <div class="dsh-kpi-icon">✅</div>
+        <div class="dsh-kpi-title">Índice de Cumplimiento Global</div>
+      </div>
+      <div class="dsh-kpi-main">
+        <div class="dsh-kpi-value">{{ cumplimiento_global }}%</div>
+        <div class="dsh-kpi-bar">
+          <div class="dsh-kpi-bar-fill" data-width="{{ cumplimiento_bar }}"></div>
         </div>
       </div>
-    </div>
-    <div class="muted" style="font-size:12px; margin-top:8px">
-      Meta: {{ cumplimiento_meta }}%
-    </div>
-  </div>
+      <div class="dsh-kpi-foot">
+        <div><span class="dsh-muted">Meta:</span> {{ cumplimiento_meta }}%</div>
+        <div><span class="dsh-pill dsh-pill-blue">↗ Tendencia</span></div>
+      </div>
+    </article>
 
-  <!-- Factor de Incidentes -->
-  <div class="card indicator-card {% if factor_incidentes <= factor_meta %}success{% else %}warning{% endif %}">
-    <div class="kpi">
-      <div>⚠️</div>
-      <div style="flex:1">
-        <h3>Factor de Incidentes</h3>
-        <div class="v">{{ factor_incidentes }}</div>
-        <div class="bar" style="margin-top:8px">
-          <i data-bar="{{ factor_bar }}" style="background:var(--warn)"></i>
+    <article class="dsh-kpi dsh-kpi-orange">
+      <div class="dsh-kpi-head">
+        <div class="dsh-kpi-icon">⚠️</div>
+        <div class="dsh-kpi-title">Factor de Incidentes</div>
+      </div>
+      <div class="dsh-kpi-main">
+        <div class="dsh-kpi-value">{{ factor_incidentes }}</div>
+        <div class="dsh-kpi-bar">
+          <div class="dsh-kpi-bar-fill" data-width="{{ factor_bar }}"></div>
         </div>
       </div>
-    </div>
-    <div class="muted" style="font-size:12px; margin-top:8px">
-      Fórmula: (Incidentes / HH) × 1M<br>
-      Meta: &lt; {{ factor_meta }}
-    </div>
-  </div>
-
-  <!-- Tiempo de Respuesta -->
-  <div class="card indicator-card">
-    <div class="kpi">
-      <div>⏱️</div>
-      <div style="flex:1">
-        <h3>Tiempo Respuesta Promedio</h3>
-        <div class="v">{{ tiempo_respuesta }}h</div>
-        <div class="bar" style="margin-top:8px">
-          <i data-bar="{{ tiempo_bar }}" style="background:var(--info)"></i>
-        </div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px; margin-top:8px">
-      Meta: &lt; 2.5h
-    </div>
-  </div>
-
-  <!-- Hallazgos Críticos -->
-  <div class="card indicator-card critical">
-    <div class="kpi">
-      <div>🔍</div>
-      <div style="flex:1">
-        <h3>Hallazgos Críticos</h3>
-        <div class="v">{{ hallazgos_criticos }}</div>
-        <div class="bar" style="margin-top:8px">
-          <i data-bar="{{ hallazgos_bar }}" style="background:var(--danger)"></i>
-        </div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px; margin-top:8px">
-      No Conformidades Mayores<br>
-      Requieren atención inmediata
-    </div>
-  </div>
-
-  <!-- Alertas del Sistema -->
-  <div class="card" style="grid-column:span 2">
-    <h3 style="margin-top:0">Alertas del Sistema</h3>
-    <ul id="alertas">
-      {% if hallazgos_pendientes > 0 %}
-      <li>{{ hallazgos_pendientes }} Hallazgo{{ hallazgos_pendientes|pluralize:"s" }} pendiente{{ hallazgos_pendientes|pluralize:"s" }} de cierre</li>
-      {% endif %}
-      {% for proceso in procesos_interrumpidos %}
-      <li>Proceso "{{ proceso.nombre }}" interrumpido</li>
-      {% endfor %}
-      {% if incidentes_sin_causa_raiz > 0 %}
-      <li>{{ incidentes_sin_causa_raiz }} Incidente{{ incidentes_sin_causa_raiz|pluralize:"s" }} sin causa raíz asignada</li>
-      {% endif %}
-      {% if not hallazgos_pendientes and not procesos_interrumpidos and not incidentes_sin_causa_raiz %}
-      <li>Sin alertas activas.</li>
-      {% endif %}
-    </ul>
-    <button class="btn warn" style="margin-top:12px;width:100%;font-size:12px;justify-content:center">Ver Alertas</button>
-  </div>
-
-</div>
-
-<!-- Sección de Análisis con Tabs -->
-<div class="card" style="margin-top:16px">
-
-  <div class="tabs">
-    <button class="tab active" data-tab="tabla-dinamica">📊 Tablas Dinámicas</button>
-    <button class="tab" data-tab="historico">📈 Análisis Histórico</button>
-    <button class="tab" data-tab="avance-obra">🏗️ Avance de Obra</button>
-  </div>
-
-  <!-- Panel 1: Tablas Dinámicas -->
-  <div class="tab-panel active" data-panel="tabla-dinamica">
-    {% if indicadores_tabla %}
-    <div class="table-wrapper">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Indicador</th>
-            <th>Área</th>
-            <th>Responsable</th>
-            <th>Valor</th>
-            <th>Meta</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for ind in indicadores_tabla %}
-          <tr>
-            <td><strong>{{ ind.nombre }}</strong></td>
-            <td>{{ ind.area }}</td>
-            <td>{{ ind.responsable }}</td>
-            <td>{{ ind.valor }} {{ ind.unidad }}</td>
-            <td>{{ ind.meta }} {{ ind.unidad }}</td>
-            <td>
-              {% if ind.cumple_meta %}
-              <span class="chip ok">Cumple</span>
-              {% else %}
-              <span class="chip danger">No Cumple</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="empty-state">No hay indicadores marcados para tabla dinámica.
-      <a href="{% url 'indicadores' %}">Crear indicador →</a>
-    </p>
-    {% endif %}
-  </div>
-
-  <!-- Panel 2: Análisis Histórico -->
-  <div class="tab-panel" data-panel="historico">
-    {% if indicadores_historico %}
-    {% for item in indicadores_historico %}
-    {% with ind=item.ind %}
-    <div class="report-historical">
-      <div class="stack" style="justify-content:space-between;align-items:flex-start">
+      <div class="dsh-kpi-foot">
+        <div><span class="dsh-muted">Fórmula:</span> (Inc/HH)×1M</div>
         <div>
-          <strong>{{ ind.nombre }}</strong>
-          <div class="muted" style="font-size:12px;margin-top:2px">{{ ind.area }} · {{ ind.responsable }}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:20px;font-weight:700">{{ ind.valor }} {{ ind.unidad }}</div>
-          <div class="muted" style="font-size:12px">Meta: {{ ind.meta }} {{ ind.unidad }}</div>
+          <span class="dsh-muted">Meta:</span> &lt; {{ factor_meta }}
+          <span class="dsh-pill {% if factor_incidentes <= factor_meta %}dsh-pill-green{% else %}dsh-pill-red{% endif %}">
+            {% if factor_incidentes <= factor_meta %}OK{% else %}Alto{% endif %}
+          </span>
         </div>
       </div>
-      <div class="competency-progress" style="margin-top:10px">
-        {% if item.ok %}
-        <div class="bar-ok" data-width="{{ item.pct }}"></div>
-        {% else %}
-        <div class="bar-fail" data-width="{{ item.pct }}"></div>
-        {% endif %}
+    </article>
+
+    <article class="dsh-kpi dsh-kpi-blue">
+      <div class="dsh-kpi-head">
+        <div class="dsh-kpi-icon">⏱️</div>
+        <div class="dsh-kpi-title">Tiempo Respuesta Promedio</div>
       </div>
-      <div class="stack" style="justify-content:space-between;margin-top:4px">
-        <span class="muted" style="font-size:11px">0 {{ ind.unidad }}</span>
-        <span class="muted" style="font-size:11px">Meta {{ ind.meta }} {{ ind.unidad }}</span>
+      <div class="dsh-kpi-main">
+        <div class="dsh-kpi-value">{{ tiempo_respuesta }}h</div>
+        <div class="dsh-kpi-bar">
+          <div class="dsh-kpi-bar-fill" data-width="{{ tiempo_bar }}"></div>
+        </div>
       </div>
-    </div>
-    {% endwith %}
-    {% endfor %}
-    {% else %}
-    <p class="empty-state">No hay indicadores marcados para reporte histórico.
-      <a href="{% url 'indicadores' %}">Crear indicador →</a>
-    </p>
-    {% endif %}
+      <div class="dsh-kpi-foot">
+        <div><span class="dsh-muted">Meta:</span> &lt; 2.5h</div>
+        <div><span class="dsh-pill dsh-pill-green">BAJA</span></div>
+      </div>
+    </article>
+
+    <article class="dsh-kpi dsh-kpi-red">
+      <div class="dsh-kpi-head">
+        <div class="dsh-kpi-icon">🔎</div>
+        <div class="dsh-kpi-title">Hallazgos Críticos</div>
+      </div>
+      <div class="dsh-kpi-main">
+        <div class="dsh-kpi-value">{{ hallazgos_criticos }}</div>
+        <div class="dsh-kpi-bar">
+          <div class="dsh-kpi-bar-fill" data-width="{{ hallazgos_bar }}"></div>
+        </div>
+      </div>
+      <div class="dsh-kpi-note">
+        <div>No Conformidades Mayores</div>
+        <div class="dsh-muted">Requieren atención inmediata</div>
+      </div>
+    </article>
+
   </div>
 
-  <!-- Panel 3: Avance de Obra -->
-  <div class="tab-panel" data-panel="avance-obra">
-    {% if obras_dash %}
-    <div class="stats-grid" style="margin-bottom:16px">
-      {% for obra in obras_dash %}
-      <div class="stat-card">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">
-          {{ obra.nombre|truncatechars:22 }}
+  <!-- Middle cards -->
+  <div class="dsh-mid-grid">
+
+    <section class="dsh-card">
+      <div class="dsh-card-title">Avance de Obra</div>
+      {% if obras_dash %}
+      <div class="dsh-mini-grid">
+        {% with obras_dash.0 as obra %}
+        <div class="dsh-mini">
+          <div class="dsh-mini-label">Físico Programado</div>
+          <div class="dsh-mini-value dsh-blue">{{ obra.avance_programado }}%</div>
+          <div class="dsh-mini-bar"><div class="dsh-mini-bar-fill" data-width="{{ obra.avance_programado }}"></div></div>
         </div>
-        <div style="display:flex;gap:16px;align-items:flex-end;margin-bottom:8px">
-          <div>
-            <div style="font-size:11px;color:var(--muted)">Programado</div>
-            <div style="font-size:22px;font-weight:700">{{ obra.avance_programado }}%</div>
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--muted)">Real</div>
-            {% if obra.avance_real >= obra.avance_programado %}
-            <div class="text-ok" style="font-size:22px;font-weight:700">{{ obra.avance_real }}%</div>
-            {% else %}
-            <div class="text-fail" style="font-size:22px;font-weight:700">{{ obra.avance_real }}%</div>
-            {% endif %}
-          </div>
+        <div class="dsh-mini">
+          <div class="dsh-mini-label">Físico Real</div>
+          <div class="dsh-mini-value dsh-green">{{ obra.avance_real }}%</div>
+          <div class="dsh-mini-bar"><div class="dsh-mini-bar-fill" data-width="{{ obra.avance_real }}"></div></div>
         </div>
-        <div class="competency-progress">
-          {% if obra.avance_real >= obra.avance_programado %}
-          <div class="bar-ok" data-width="{{ obra.avance_real }}"></div>
-          {% else %}
-          <div class="bar-fail" data-width="{{ obra.avance_real }}"></div>
-          {% endif %}
-        </div>
-        <div class="muted" style="font-size:11px;margin-top:4px">{{ obra.get_estado_display }}</div>
+        {% endwith %}
       </div>
-      {% endfor %}
-    </div>
-    <div style="text-align:right">
-      <a href="{% url 'avance_obra' %}" class="btn primary">Ver detalle de obras →</a>
-    </div>
-    {% else %}
-    <p class="empty-state">No hay obras registradas.
-      <a href="{% url 'avance_obra' %}">Registrar primera obra →</a>
-    </p>
-    {% endif %}
+      <div class="dsh-mini-foot">
+        <span class="dsh-muted">Última obra:</span> <strong>{{ obras_dash.0.nombre|truncatechars:30 }}</strong>
+      </div>
+      {% else %}
+      <div style="padding:10px 0">
+        <p class="dsh-muted" style="margin-bottom:14px">Sin obras registradas aún.</p>
+        <a href="{% url 'avance_obra' %}" class="dsh-btn dsh-btn-primary">🏗️ Crear Primera Obra</a>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="dsh-card">
+      <div class="dsh-card-title">Alertas del Sistema</div>
+      <ul class="dsh-alert-list">
+        {% if hallazgos_pendientes > 0 %}
+        <li>{{ hallazgos_pendientes }} Hallazgo{{ hallazgos_pendientes|pluralize:"s" }} pendiente{{ hallazgos_pendientes|pluralize:"s" }} de cierre</li>
+        {% endif %}
+        {% for proceso in procesos_interrumpidos %}
+        <li>Proceso "{{ proceso.nombre }}" interrumpido</li>
+        {% endfor %}
+        {% if incidentes_sin_causa_raiz > 0 %}
+        <li>{{ incidentes_sin_causa_raiz }} Incidente{{ incidentes_sin_causa_raiz|pluralize:"s" }} sin causa raíz asignada</li>
+        {% endif %}
+        {% if not hallazgos_pendientes and not procesos_interrumpidos and not incidentes_sin_causa_raiz %}
+        <li>Sin alertas activas. ✅</li>
+        {% endif %}
+      </ul>
+      <button class="dsh-btn dsh-btn-orange dsh-btn-block" type="button">Ver Alertas</button>
+    </section>
+
   </div>
+
+  <!-- Tabs -->
+  <section class="dsh-card dsh-card-tabs">
+    <div class="dsh-tabs">
+      <button class="dsh-tab is-active" type="button" data-tab="tablas">📊 Tablas Dinámicas</button>
+      <button class="dsh-tab" type="button" data-tab="historico">📈 Análisis Histórico</button>
+      <button class="dsh-tab" type="button" data-tab="obras">🏗️ Avance de Obra</button>
+    </div>
+    <div class="dsh-tabline"></div>
+
+    <!-- Tab 1: Tablas Dinámicas -->
+    <div class="dsh-pane is-active" id="tablas">
+      <div class="dsh-pane-head">
+        <div class="dsh-pane-title">Tablas Dinámicas de Indicadores</div>
+        <div class="dsh-pane-actions">
+          <button class="dsh-btn dsh-btn-blue" type="button">Agrupar por Área</button>
+          <button class="dsh-btn dsh-btn-blue" type="button">Por Responsable</button>
+          <button class="dsh-btn dsh-btn-ghost" type="button">Restablecer</button>
+        </div>
+      </div>
+
+      {% if indicadores_tabla %}
+      <div class="dsh-table">
+        <div class="dsh-thead">
+          <div>Indicador</div><div>Área</div><div>Valor</div><div>Meta</div>
+          <div>Tendencia</div><div>Mejor al</div><div>Responsable</div>
+        </div>
+        {% for ind in indicadores_tabla %}
+        <div class="dsh-row">
+          <div class="dsh-strong">{{ ind.nombre }}</div>
+          <div>{{ ind.area }}</div>
+          <div>{{ ind.valor }} {{ ind.unidad }}</div>
+          <div>{{ ind.meta }} {{ ind.unidad }}</div>
+          <div><span class="dsh-pill dsh-pill-blue">{{ ind.get_tendencia_display }}</span></div>
+          <div><span class="dsh-pill {% if ind.mejor_al == 'alza' %}dsh-pill-green{% else %}dsh-pill-red{% endif %}">{{ ind.get_mejor_al_display|upper }}</span></div>
+          <div>{{ ind.responsable }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="dsh-muted" style="padding:20px 0">No hay indicadores marcados para tabla dinámica.
+        <a href="{% url 'indicadores' %}">Crear indicador →</a></p>
+      {% endif %}
+    </div>
+
+    <!-- Tab 2: Análisis Histórico -->
+    <div class="dsh-pane" id="historico">
+      <div class="dsh-pane-title">Reportes con Datos Históricos</div>
+
+      {% if indicadores_historico %}
+      <div class="dsh-hist-grid">
+        <div class="dsh-hist-card">
+          <div class="dsh-hist-h">Indicadores en Seguimiento</div>
+          <div class="dsh-compare">
+            {% for item in indicadores_historico %}
+            {% with ind=item.ind %}
+            <div class="dsh-compare-row">
+              <div>
+                <div style="font-weight:900;font-size:13px">{{ ind.nombre|truncatechars:28 }}</div>
+                <div class="dsh-muted" style="font-size:12px">{{ ind.area }}</div>
+              </div>
+              <div class="dsh-muted">{{ ind.valor }} / {{ ind.meta }} {{ ind.unidad }}</div>
+              <span class="dsh-pill {% if item.ok %}dsh-pill-green{% else %}dsh-pill-red{% endif %}">{{ item.pct }}%</span>
+            </div>
+            {% endwith %}
+            {% endfor %}
+          </div>
+        </div>
+        <div class="dsh-hist-card">
+          <div class="dsh-hist-h">Comparativa General</div>
+          <div class="dsh-compare">
+            <div class="dsh-compare-row">
+              <div>Hallazgos pendientes</div>
+              <div class="dsh-muted">{{ hallazgos_pendientes }}</div>
+              <span class="dsh-pill {% if hallazgos_pendientes == 0 %}dsh-pill-green{% else %}dsh-pill-orange{% endif %}">
+                {% if hallazgos_pendientes == 0 %}OK{% else %}Pendiente{% endif %}
+              </span>
+            </div>
+            <div class="dsh-compare-row">
+              <div>Incidentes sin causa</div>
+              <div class="dsh-muted">{{ incidentes_sin_causa_raiz }}</div>
+              <span class="dsh-pill {% if incidentes_sin_causa_raiz == 0 %}dsh-pill-green{% else %}dsh-pill-red{% endif %}">
+                {% if incidentes_sin_causa_raiz == 0 %}OK{% else %}Revisar{% endif %}
+              </span>
+            </div>
+          </div>
+          <button class="dsh-btn dsh-btn-blue dsh-btn-block" type="button" style="margin-top:14px">
+            Generar Reporte Histórico
+          </button>
+        </div>
+      </div>
+      {% else %}
+      <p class="dsh-muted" style="padding:20px 0">No hay indicadores marcados para reporte histórico.
+        <a href="{% url 'indicadores' %}">Crear indicador →</a></p>
+      {% endif %}
+    </div>
+
+    <!-- Tab 3: Avance de Obra -->
+    <div class="dsh-pane" id="obras">
+      <div class="dsh-pane-title">Tendencias y proyecciones de avance por obra</div>
+
+      {% if obras_dash %}
+      <div class="dsh-trend-grid">
+        {% for obra in obras_dash %}
+        <div class="dsh-year">
+          <div class="dsh-year-bar" data-width="{{ obra.avance_real }}"></div>
+          <div class="dsh-year-label" style="font-size:11px;text-align:center;margin-top:10px">{{ obra.nombre|truncatechars:16 }}</div>
+          <div class="dsh-footnote">{{ obra.avance_real }}%</div>
+        </div>
+        {% endfor %}
+      </div>
+      <div style="margin-top:14px">
+        <a href="{% url 'avance_obra' %}" class="dsh-btn dsh-btn-primary">🏗️ Ver Avance Completo →</a>
+      </div>
+      {% else %}
+      <div style="padding:20px 0">
+        <p class="dsh-muted" style="margin-bottom:14px">No hay obras registradas aún.</p>
+        <a href="{% url 'avance_obra' %}" class="dsh-btn dsh-btn-primary">🏗️ Registrar Primera Obra</a>
+      </div>
+      {% endif %}
+    </div>
+
+  </section>
 
 </div>
 
 <script>
-document.querySelectorAll('[data-width]').forEach(function(el) {
-  el.style.width = el.getAttribute('data-width') + '%';
-});
+(function () {
+  // Bar fills for dsh-kpi-bar-fill, dsh-mini-bar-fill, dsh-year-bar
+  document.querySelectorAll('[data-width]').forEach(el => {
+    el.style.width = el.getAttribute('data-width') + '%';
+  });
+
+  // Tab system
+  const tabs  = Array.from(document.querySelectorAll('.dsh-tab'));
+  const panes = Array.from(document.querySelectorAll('.dsh-pane'));
+  function activateTab(key) {
+    tabs.forEach(t => t.classList.toggle('is-active', t.dataset.tab === key));
+    panes.forEach(p => p.classList.toggle('is-active', p.id === key));
+  }
+  tabs.forEach(t => t.addEventListener('click', () => activateTab(t.dataset.tab)));
+})();
 </script>
 
 {% endblock %}

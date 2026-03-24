@@ -5,8 +5,8 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User, Group
 from django.http import HttpResponse
 
-from .models import Hallazgo, Incidente, Proceso, Indicador, IndicadorCumplimiento, Obra, Auditoria, Competencia, Configuracion
-from .forms import HallazgoForm, AuditoriaForm, IncidenteForm, IndicadorForm, CompetenciaForm, ObraForm, UsuarioCrearForm, UsuarioEditarForm, GrupoForm, ConfiguracionForm
+from .models import Hallazgo, Incidente, Proceso, Indicador, IndicadorCumplimiento, Obra, Auditoria, Competencia
+from .forms import HallazgoForm, AuditoriaForm, IncidenteForm, IndicadorForm, CompetenciaForm, ObraForm, UsuarioCrearForm, UsuarioEditarForm, GrupoForm
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -443,16 +443,3 @@ def grupo_eliminar(request, pk):
         messages.success(request, 'Grupo eliminado.')
     return redirect('permisos')
 
-
-# ── configuración (solo admin) ────────────────────────────────────────────────
-
-@staff_required
-def configuracion(request):
-    config = Configuracion.get_instancia()
-    form = ConfiguracionForm(request.POST or None, instance=config)
-    if request.method == 'POST':
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Configuración guardada.')
-            return redirect('configuracion')
-    return render(request, 'configuracion.html', {'form': form, 'config': config})

@@ -1,219 +1,184 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Reporte de Hallazgos | SIGCS{% endblock %}
-{% block nav_hallazgos %}active{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/hallazgos.css' %}">
 
-<!-- Encabezado -->
-<div class="page-header">
-  <div>
-    <h2 class="page-title">🔍 Reporte de Hallazgos</h2>
-    <p class="page-sub">Seguimiento de no conformidades y observaciones del sistema</p>
-  </div>
-  <button class="btn primary" onclick="openModal('modal-hallazgo')">➕ Nuevo Hallazgo</button>
-</div>
+<div class="hl-page">
 
-<!-- KPI Cards -->
-<div class="dashboard-grid" style="margin-bottom:20px">
-
-  <div class="card indicator-card">
-    <div class="kpi">
-      <div>🔍</div>
-      <div style="flex:1">
-        <h3>Total Hallazgos</h3>
-        <div class="v">{{ total }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Registrados en el sistema</div>
-  </div>
-
-  <div class="card indicator-card {% if pendientes > 0 %}critical{% endif %}">
-    <div class="kpi">
-      <div>⏳</div>
-      <div style="flex:1">
-        <h3>Pendientes</h3>
-        <div class="v">{{ pendientes }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Sin iniciar atención</div>
+  <!-- KPI grid -->
+  <div class="hl-kpi-grid">
+    <article class="hl-kpi">
+      <div class="hl-kpi-head"><div class="hl-kpi-icon">📋</div><div class="hl-kpi-title">Total Hallazgos</div></div>
+      <div class="hl-kpi-value">{{ total }}</div>
+      <div class="hl-kpi-note">Registrados en el sistema</div>
+    </article>
+    <article class="hl-kpi hl-kpi-orange">
+      <div class="hl-kpi-head"><div class="hl-kpi-icon">⏳</div><div class="hl-kpi-title">Pendientes</div></div>
+      <div class="hl-kpi-value">{{ pendientes }}</div>
+      <div class="hl-kpi-note">Sin resolver</div>
+    </article>
+    <article class="hl-kpi hl-kpi-blue">
+      <div class="hl-kpi-head"><div class="hl-kpi-icon">🔄</div><div class="hl-kpi-title">En Proceso</div></div>
+      <div class="hl-kpi-value">{{ en_proceso }}</div>
+      <div class="hl-kpi-note">En seguimiento</div>
+    </article>
+    <article class="hl-kpi hl-kpi-red">
+      <div class="hl-kpi-head"><div class="hl-kpi-icon">🚨</div><div class="hl-kpi-title">Críticos</div></div>
+      <div class="hl-kpi-value">{{ criticos }}</div>
+      <div class="hl-kpi-note">Requieren atención inmediata</div>
+    </article>
   </div>
 
-  <div class="card indicator-card">
-    <div class="kpi">
-      <div>🔧</div>
-      <div style="flex:1">
-        <h3>En Proceso</h3>
-        <div class="v">{{ en_proceso }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Bajo seguimiento activo</div>
-  </div>
-
-  <div class="card indicator-card {% if criticos > 0 %}critical{% endif %}">
-    <div class="kpi">
-      <div>🚨</div>
-      <div style="flex:1">
-        <h3>Críticos</h3>
-        <div class="v">{{ criticos }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Severidad crítica activa</div>
-  </div>
-
-</div>
-
-<!-- Filtros -->
-<form method="get">
-  <div class="toolbar" style="margin-bottom:16px">
-    <select name="severidad" class="filter-select">
-      <option value="">Severidad: Todas</option>
-      <option value="critico"  {% if severidad_f == 'critico' %}selected{% endif %}>Crítico</option>
-      <option value="alto"     {% if severidad_f == 'alto' %}selected{% endif %}>Alto</option>
-      <option value="medio"    {% if severidad_f == 'medio' %}selected{% endif %}>Medio</option>
-      <option value="bajo"     {% if severidad_f == 'bajo' %}selected{% endif %}>Bajo</option>
+  <!-- Toolbar / filtros -->
+  <form method="get">
+  <div class="hl-toolbar">
+    <button class="hl-btn hl-btn-primary" type="button" id="hlOpenModalBtn">➕ Nuevo Hallazgo</button>
+    <select class="hl-select" name="severidad">
+      <option value="">Todas las severidades</option>
+      <option value="leve" {% if severidad_f == 'leve' %}selected{% endif %}>Leve</option>
+      <option value="moderado" {% if severidad_f == 'moderado' %}selected{% endif %}>Moderado</option>
+      <option value="critico" {% if severidad_f == 'critico' %}selected{% endif %}>Crítico</option>
     </select>
-    <select name="estado" class="filter-select">
-      <option value="">Estado: Todos</option>
-      <option value="pendiente"  {% if estado_f == 'pendiente' %}selected{% endif %}>Pendiente</option>
+    <select class="hl-select" name="estado">
+      <option value="">Todos los estados</option>
+      <option value="pendiente" {% if estado_f == 'pendiente' %}selected{% endif %}>Pendiente</option>
       <option value="en_proceso" {% if estado_f == 'en_proceso' %}selected{% endif %}>En Proceso</option>
-      <option value="cerrado"    {% if estado_f == 'cerrado' %}selected{% endif %}>Cerrado</option>
+      <option value="cerrado" {% if estado_f == 'cerrado' %}selected{% endif %}>Cerrado</option>
     </select>
-    <select name="proceso" class="filter-select">
-      <option value="">Proceso: Todos</option>
+    <select class="hl-select" name="proceso">
+      <option value="">Todos los procesos</option>
       {% for p in procesos %}
-      <option value="{{ p.id }}" {% if proceso_f == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nombre }}</option>
+      <option value="{{ p.pk }}" {% if proceso_f == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.nombre }}</option>
       {% endfor %}
     </select>
-    <button type="submit" class="btn primary">Filtrar</button>
-    {% if severidad_f or estado_f or proceso_f %}
-    <a href="{% url 'hallazgos' %}" class="btn">Limpiar</a>
-    {% endif %}
+    <button class="hl-btn hl-btn-ghost" type="submit">🔎 Filtrar</button>
+    <a href="{% url 'hallazgos' %}" class="hl-btn hl-btn-ghost">✕ Limpiar</a>
+    <button class="hl-btn hl-btn-ghost" type="button" onclick="window.location='{% url 'exportar_hallazgos' %}'">⬇️ Exportar</button>
   </div>
-</form>
+  </form>
 
-<!-- Tabla -->
-<div class="card">
-  <div class="data-table-controls">
-    <h3 style="margin:0">
-      Listado de Hallazgos
-      {% if severidad_f or estado_f or proceso_f %}
-      <span class="chip info" style="font-size:12px;vertical-align:middle">Filtrado</span>
-      {% endif %}
-    </h3>
-    <a href="{% url 'exportar_hallazgos' %}" class="btn ok">⬇️ Exportar CSV</a>
-  </div>
-
-  {% if hallazgos %}
-  <div class="table-wrapper">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Título</th>
-          <th>Proceso</th>
-          <th>Severidad</th>
-          <th>Estado</th>
-          <th>Fecha Reporte</th>
-          <th>Fecha Cierre</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for h in hallazgos %}
-        <tr>
-          <td>
-            <strong>{{ h.titulo }}</strong>
-            {% if h.descripcion %}
-            <br><span class="muted" style="font-size:12px">{{ h.descripcion|truncatewords:10 }}</span>
-            {% endif %}
-          </td>
-          <td>{{ h.proceso.nombre|default:"—" }}</td>
-          <td>
-            {% if h.severidad == 'critico' %}
-            <span class="chip danger">Crítico</span>
-            {% elif h.severidad == 'alto' %}
-            <span class="chip warn">Alto</span>
-            {% elif h.severidad == 'medio' %}
-            <span class="chip info">Medio</span>
-            {% else %}
-            <span class="chip">Bajo</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if h.estado == 'pendiente' %}
-            <span class="chip warn">Pendiente</span>
-            {% elif h.estado == 'en_proceso' %}
-            <span class="chip info">En Proceso</span>
-            {% else %}
-            <span class="chip ok">Cerrado</span>
-            {% endif %}
-          </td>
-          <td>{{ h.fecha_reporte }}</td>
-          <td>{{ h.fecha_cierre|default:"—" }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  {% else %}
-  <p class="empty-state">
-    No se encontraron hallazgos{% if severidad_f or estado_f or proceso_f %} con los filtros aplicados{% endif %}.
-    {% if not severidad_f and not estado_f and not proceso_f %}
-    Crea el primero desde el <a href="/admin/">panel de administración</a>.
-    {% endif %}
-  </p>
-  {% endif %}
-
-</div>
-
-<!-- Modal Nuevo Hallazgo -->
-<div class="modal-overlay" id="modal-hallazgo" style="display:{% if show_modal %}grid{% else %}none{% endif %}">
-  <div class="box" role="dialog" aria-modal="true" style="max-width:600px">
-    <div class="stack" style="justify-content:space-between;margin-bottom:14px">
-      <h3 style="margin:0">Nuevo Hallazgo</h3>
-      <button class="btn" onclick="closeModal('modal-hallazgo')" aria-label="Cerrar">✖</button>
+  <!-- Tabla -->
+  <div class="hl-card">
+    <div class="hl-card-head">
+      <h2 class="hl-card-title" style="margin:0">Reporte de Hallazgos</h2>
+      <div>{{ hallazgos|length }} hallazgo{{ hallazgos|length|pluralize:"s" }} encontrado{{ hallazgos|length|pluralize:"s" }}</div>
     </div>
-    <form method="post">
-      {% csrf_token %}
-      <div class="row">
-        <div class="field col-12">
-          <label>Título *</label>
-          {{ form.titulo }}
-          {% if form.titulo.errors %}<span class="form-error">{{ form.titulo.errors.0 }}</span>{% endif %}
-        </div>
-        <div class="field col-12">
-          <label>Descripción</label>
-          {{ form.descripcion }}
-        </div>
-        <div class="field col-6">
-          <label>Proceso</label>
-          {{ form.proceso }}
-        </div>
-        <div class="field col-6">
-          <label>Severidad</label>
-          {{ form.severidad }}
-        </div>
-        <div class="field col-6">
-          <label>Estado</label>
-          {{ form.estado }}
-        </div>
-        <div class="field col-6">
-          <label>Fecha Cierre</label>
-          {{ form.fecha_cierre }}
-        </div>
+
+    {% if hallazgos %}
+    <div class="hl-table">
+      <div class="hl-thead">
+        <div>Título / Descripción</div>
+        <div>Proceso</div>
+        <div>Severidad</div>
+        <div>Estado</div>
+        <div>F. Reporte</div>
+        <div>F. Cierre</div>
       </div>
-      <div class="stack" style="justify-content:flex-end;gap:8px;margin-top:16px">
-        <button type="button" class="btn" onclick="closeModal('modal-hallazgo')">Cancelar</button>
-        <button type="submit" class="btn ok">💾 Guardar</button>
+
+      {% for h in hallazgos %}
+      <div class="hl-row">
+        <div class="hl-cell hl-strong">
+          {{ h.titulo }}
+          {% if h.descripcion %}
+          <div class="hl-muted">{{ h.descripcion|truncatewords:12 }}</div>
+          {% endif %}
+        </div>
+        <div class="hl-cell">{{ h.proceso.nombre|default:"—" }}</div>
+        <div class="hl-cell">
+          <span class="hl-pill {% if h.severidad == 'critico' %}hl-pill-red{% elif h.severidad == 'moderado' %}hl-pill-orange{% else %}hl-pill-blue{% endif %}">
+            {{ h.get_severidad_display }}
+          </span>
+        </div>
+        <div class="hl-cell">
+          <span class="hl-pill {% if h.estado == 'cerrado' %}hl-pill-green{% elif h.estado == 'en_proceso' %}hl-pill-blue{% else %}hl-pill-orange{% endif %}">
+            {{ h.get_estado_display }}
+          </span>
+        </div>
+        <div class="hl-cell hl-muted">{{ h.fecha_reporte }}</div>
+        <div class="hl-cell hl-muted">{{ h.fecha_cierre|default:"—" }}</div>
       </div>
-    </form>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="text-align:center;color:#64748b;padding:40px">No se encontraron hallazgos.</p>
+    {% endif %}
   </div>
+
+  <!-- Modal: Nuevo Hallazgo -->
+  <div class="hl-modal{% if show_modal %} is-open{% endif %}" id="hlModal" aria-hidden="{% if show_modal %}false{% else %}true{% endif %}">
+    <div class="hl-backdrop" id="hlBackdrop"></div>
+
+    <div class="hl-dialog" role="dialog" aria-modal="true" aria-labelledby="hlModalTitle">
+      <div class="hl-dialog-header">
+        <h3 class="hl-dialog-title" id="hlModalTitle">Nuevo Hallazgo</h3>
+        <button class="hl-close" type="button" id="hlCloseBtn" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="hl-dialog-body">
+        <form method="post" id="hlForm">
+          {% csrf_token %}
+          <div class="hl-form-grid">
+            <div class="hl-field hl-span-2">
+              <label class="hl-label">{{ form.titulo.label }}</label>
+              {{ form.titulo }}
+              {% if form.titulo.errors %}<span style="font-size:12px;color:#dc2626">{{ form.titulo.errors.0 }}</span>{% endif %}
+            </div>
+            <div class="hl-field hl-span-2">
+              <label class="hl-label">{{ form.descripcion.label }}</label>
+              {{ form.descripcion }}
+            </div>
+            <div class="hl-field">
+              <label class="hl-label">{{ form.proceso.label }}</label>
+              {{ form.proceso }}
+            </div>
+            <div class="hl-field">
+              <label class="hl-label">{{ form.severidad.label }}</label>
+              {{ form.severidad }}
+            </div>
+            <div class="hl-field">
+              <label class="hl-label">{{ form.estado.label }}</label>
+              {{ form.estado }}
+            </div>
+            <div class="hl-field">
+              <label class="hl-label">{{ form.fecha_cierre.label }}</label>
+              {{ form.fecha_cierre }}
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="hl-dialog-footer">
+        <button class="hl-btn hl-btn-ghost" type="button" id="hlCancelBtn">Cancelar</button>
+        <button class="hl-btn hl-btn-success" type="submit" form="hlForm">💾 Guardar Hallazgo</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-{% block header_scripts %}
-document.getElementById('newItem').onclick  = () => openModal('modal-hallazgo');
-document.getElementById('exportCsv').onclick = () => window.location = '{% url "exportar_hallazgos" %}';
-document.getElementById('quickReport').onclick = () => window.location = '{% url "exportar_hallazgos" %}';
-{% endblock %}
+<script>
+(function () {
+  const openBtn  = document.getElementById('hlOpenModalBtn');
+  const modal    = document.getElementById('hlModal');
+  const closeBtn = document.getElementById('hlCloseBtn');
+  const cancelBtn = document.getElementById('hlCancelBtn');
+  const backdrop = document.getElementById('hlBackdrop');
+
+  function openModal()  { modal.classList.add('is-open');    modal.setAttribute('aria-hidden', 'false'); }
+  function closeModal() { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true'); }
+
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  backdrop?.addEventListener('click', closeModal);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal(); });
+
+  window.addEventListener('sigcs:nuevo', openModal);
+  window.addEventListener('sigcs:exportar', () => { window.location = '{% url "exportar_hallazgos" %}'; });
+})();
+</script>
 
 {% endblock %}

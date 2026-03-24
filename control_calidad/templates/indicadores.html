@@ -1,203 +1,197 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Indicadores | SIGCS{% endblock %}
-{% block nav_indicadores %}active{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/indicadores.css' %}">
 
-<!-- Encabezado -->
-<div class="page-header">
-  <div>
-    <h2 class="page-title">📈 Indicadores</h2>
-    <p class="page-sub">Seguimiento y control de indicadores de gestión</p>
+<div class="ind-page">
+
+  <!-- Toolbar -->
+  <div class="ind-toolbar">
+    <button class="ind-btn ind-btn-primary" type="button" id="indOpenModalBtn">➕ Nuevo Indicador</button>
+    <select class="ind-select">
+      <option value="">Todos</option>
+      <option>ALZA (mayor es mejor)</option>
+      <option>BAJA (menor es mejor)</option>
+    </select>
+    <input class="ind-input" type="text" placeholder="Buscar indicador…">
+    <button class="ind-btn ind-btn-ghost" onclick="window.location='{% url 'exportar_indicadores' %}'">⬇️ Exportar</button>
   </div>
-  <button class="btn primary" onclick="openModal('modal-indicador')">➕ Nuevo Indicador</button>
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px">
+    <div style="background:rgba(255,255,255,.92);border:1px solid rgba(229,231,235,.95);border-radius:18px;padding:14px;box-shadow:0 18px 40px rgba(2,6,23,.12);border-left:5px solid #16a34a">
+      <div style="font-size:12px;font-weight:900;color:#475569;margin-bottom:6px">Total Indicadores</div>
+      <div style="font-size:28px;font-weight:1000">{{ total }}</div>
+    </div>
+    <div style="background:rgba(255,255,255,.92);border:1px solid rgba(229,231,235,.95);border-radius:18px;padding:14px;box-shadow:0 18px 40px rgba(2,6,23,.12);border-left:5px solid #16a34a">
+      <div style="font-size:12px;font-weight:900;color:#475569;margin-bottom:6px">Cumpliendo Meta</div>
+      <div style="font-size:28px;font-weight:1000;color:#16a34a">{{ cumpliendo }}</div>
+    </div>
+    <div style="background:rgba(255,255,255,.92);border:1px solid rgba(229,231,235,.95);border-radius:18px;padding:14px;box-shadow:0 18px 40px rgba(2,6,23,.12);border-left:5px solid #dc2626">
+      <div style="font-size:12px;font-weight:900;color:#475569;margin-bottom:6px">Por Debajo</div>
+      <div style="font-size:28px;font-weight:1000;color:#dc2626">{{ por_debajo }}</div>
+    </div>
+    <div style="background:rgba(255,255,255,.92);border:1px solid rgba(229,231,235,.95);border-radius:18px;padding:14px;box-shadow:0 18px 40px rgba(2,6,23,.12);border-left:5px solid #2563eb">
+      <div style="font-size:12px;font-weight:900;color:#475569;margin-bottom:6px">En Alza</div>
+      <div style="font-size:28px;font-weight:1000;color:#2563eb">{{ en_alza }}</div>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <section class="ind-card">
+    <h2 class="ind-title">Indicadores del Sistema</h2>
+    <p class="ind-subtitle">Configura si cada indicador es mejor al alza o a la baja</p>
+
+    {% if indicadores %}
+    <div class="ind-table">
+      <div class="ind-thead">
+        <div>Indicador</div>
+        <div>Fórmula / Área</div>
+        <div>Valor</div>
+        <div>Meta</div>
+        <div>Mejor al</div>
+        <div>Histórico</div>
+        <div>Tablas Din.</div>
+      </div>
+
+      {% for ind in indicadores %}
+      <div class="ind-row">
+        <div class="ind-cell ind-strong">
+          {{ ind.nombre }}
+          <div class="ind-muted" style="font-size:12px">{{ ind.responsable }}</div>
+        </div>
+        <div class="ind-cell ind-muted">
+          {{ ind.formula|truncatechars:35 }}
+          <div style="font-size:12px">{{ ind.area }}</div>
+        </div>
+        <div class="ind-cell ind-strong">{{ ind.valor }} {{ ind.unidad }}</div>
+        <div class="ind-cell">{{ ind.meta }} {{ ind.unidad }}</div>
+        <div class="ind-cell">
+          <span class="ind-pill {% if ind.mejor_al == 'alza' %}ind-pill-green{% else %}ind-pill-red{% endif %}">
+            {{ ind.get_mejor_al_display|upper }}
+          </span>
+        </div>
+        <div class="ind-cell">
+          {% if ind.incluir_historico %}
+          <span class="ind-check" aria-label="Incluye histórico">✓</span>
+          {% else %}
+          <span style="color:#d1d5db;font-weight:900">—</span>
+          {% endif %}
+        </div>
+        <div class="ind-cell">
+          {% if ind.tabla_dinamica %}
+          <span class="ind-check" aria-label="En tabla dinámica">✓</span>
+          {% else %}
+          <span style="color:#d1d5db;font-weight:900">—</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="text-align:center;color:#64748b;padding:40px">No hay indicadores registrados.</p>
+    {% endif %}
+  </section>
+
+  <!-- Modal: Nuevo Indicador -->
+  <div class="ind-modal{% if show_modal %} is-open{% endif %}" id="indModal" aria-hidden="{% if show_modal %}false{% else %}true{% endif %}">
+    <div class="ind-backdrop" id="indBackdrop"></div>
+
+    <div class="ind-dialog" role="dialog" aria-modal="true" aria-labelledby="indModalTitle">
+      <div class="ind-dialog-header">
+        <h3 class="ind-dialog-title" id="indModalTitle">Nuevo Indicador</h3>
+        <button class="ind-close" type="button" id="indCloseBtn" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="ind-dialog-body">
+        <form method="post" id="indForm">
+          {% csrf_token %}
+          <div class="ind-form-grid">
+            <div class="ind-field ind-span-2">
+              <label class="ind-label">{{ form.nombre.label }}</label>
+              {{ form.nombre }}
+              {% if form.nombre.errors %}<span style="font-size:12px;color:#dc2626">{{ form.nombre.errors.0 }}</span>{% endif %}
+            </div>
+            <div class="ind-field">
+              <label class="ind-label">{{ form.mejor_al.label }}</label>
+              {{ form.mejor_al }}
+            </div>
+            <div class="ind-field ind-span-2">
+              <label class="ind-label">{{ form.formula.label }}</label>
+              {{ form.formula }}
+            </div>
+            <div class="ind-field">
+              <label class="ind-label">{{ form.area.label }}</label>
+              {{ form.area }}
+            </div>
+            <div class="ind-field">
+              <label class="ind-label">{{ form.responsable.label }}</label>
+              {{ form.responsable }}
+            </div>
+            <div class="ind-field">
+              <label class="ind-label">{{ form.tendencia.label }}</label>
+              {{ form.tendencia }}
+            </div>
+            <div class="ind-field">
+              <label class="ind-label">{{ form.valor.label }}</label>
+              {{ form.valor }}
+            </div>
+            <div class="ind-field">
+              <label class="ind-label">{{ form.meta.label }}</label>
+              {{ form.meta }}
+            </div>
+            <div class="ind-field">
+              <label class="ind-label">{{ form.unidad.label }}</label>
+              {{ form.unidad }}
+            </div>
+          </div>
+
+          <div class="ind-check-block">
+            <div class="ind-check-title">Generar Reporte Histórico</div>
+            <label class="ind-checkline">
+              {{ form.incluir_historico }}
+              <span>Incluir en reportes históricos</span>
+            </label>
+            <label class="ind-checkline" style="margin-left:16px">
+              {{ form.tabla_dinamica }}
+              <span>Permitir en tablas dinámicas</span>
+            </label>
+          </div>
+        </form>
+      </div>
+
+      <div class="ind-dialog-footer">
+        <button class="ind-btn ind-btn-ghost" type="button" id="indCancelBtn">Cancelar</button>
+        <button class="ind-btn ind-btn-success" type="submit" form="indForm">💾 Guardar Indicador</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<!-- KPI Cards -->
-<div class="dashboard-grid" style="margin-bottom:20px">
+<script>
+(function () {
+  const openBtn  = document.getElementById('indOpenModalBtn');
+  const modal    = document.getElementById('indModal');
+  const closeBtn = document.getElementById('indCloseBtn');
+  const cancelBtn = document.getElementById('indCancelBtn');
+  const backdrop = document.getElementById('indBackdrop');
 
-  <div class="card indicator-card">
-    <div class="kpi">
-      <div>📈</div>
-      <div style="flex:1">
-        <h3>Total Indicadores</h3>
-        <div class="v">{{ total }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Registrados en el sistema</div>
-  </div>
+  function openModal()  { modal.classList.add('is-open');    modal.setAttribute('aria-hidden', 'false'); }
+  function closeModal() { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true'); }
 
-  <div class="card indicator-card {% if cumpliendo > 0 %}success{% endif %}">
-    <div class="kpi">
-      <div>✅</div>
-      <div style="flex:1">
-        <h3>Cumpliendo Meta</h3>
-        <div class="v">{{ cumpliendo }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Dentro del rango esperado</div>
-  </div>
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  backdrop?.addEventListener('click', closeModal);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal(); });
 
-  <div class="card indicator-card {% if por_debajo > 0 %}critical{% endif %}">
-    <div class="kpi">
-      <div>⚠️</div>
-      <div style="flex:1">
-        <h3>Por Debajo de Meta</h3>
-        <div class="v">{{ por_debajo }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Requieren atención</div>
-  </div>
-
-  <div class="card indicator-card">
-    <div class="kpi">
-      <div>↗️</div>
-      <div style="flex:1">
-        <h3>Tendencia Alza</h3>
-        <div class="v">{{ en_alza }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Con tendencia positiva</div>
-  </div>
-
-</div>
-
-<!-- Tabla de indicadores -->
-<div class="card">
-  <div class="data-table-controls">
-    <h3 style="margin:0">Listado de Indicadores</h3>
-    <a href="{% url 'exportar_indicadores' %}" class="btn ok">⬇️ Exportar CSV</a>
-  </div>
-
-  {% if indicadores %}
-  <div class="table-wrapper">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Indicador</th>
-          <th>Área</th>
-          <th>Valor</th>
-          <th>Meta</th>
-          <th>Tendencia</th>
-          <th>Mejor al</th>
-          <th>Responsable</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for ind in indicadores %}
-        <tr>
-          <td>
-            <strong>{{ ind.nombre }}</strong>
-            {% if ind.formula %}
-            <br><span class="muted" style="font-size:12px">{{ ind.formula|truncatewords:8 }}</span>
-            {% endif %}
-          </td>
-          <td>{{ ind.area }}</td>
-          <td>
-            <strong>{{ ind.valor }} {{ ind.unidad }}</strong>
-          </td>
-          <td>{{ ind.meta }} {{ ind.unidad }}</td>
-          <td>
-            {% if ind.tendencia == 'alza' %}
-            <span class="trend-indicator up">↗ Alza</span>
-            {% elif ind.tendencia == 'baja' %}
-            <span class="trend-indicator down">↘ Baja</span>
-            {% else %}
-            <span class="trend-indicator">→ Estable</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if ind.mejor_al == 'alza' %}
-            <span class="chip ok">ALZA</span>
-            {% else %}
-            <span class="chip danger">BAJA</span>
-            {% endif %}
-          </td>
-          <td>{{ ind.responsable }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  {% else %}
-  <p class="empty-state">
-    No hay indicadores registrados. Crea el primero desde el
-    <a href="/admin/">panel de administración</a>.
-  </p>
-  {% endif %}
-
-</div>
-
-<!-- Modal Nuevo Indicador -->
-<div class="modal-overlay" id="modal-indicador" style="display:{% if show_modal %}grid{% else %}none{% endif %}">
-  <div class="box" role="dialog" aria-modal="true" style="max-width:680px">
-    <div class="stack" style="justify-content:space-between;margin-bottom:14px">
-      <h3 style="margin:0">Nuevo Indicador</h3>
-      <button class="btn" onclick="closeModal('modal-indicador')" aria-label="Cerrar">✖</button>
-    </div>
-    <form method="post">
-      {% csrf_token %}
-      <div class="row">
-        <div class="field col-12">
-          <label>Nombre *</label>
-          {{ form.nombre }}
-          {% if form.nombre.errors %}<span class="form-error">{{ form.nombre.errors.0 }}</span>{% endif %}
-        </div>
-        <div class="field col-6">
-          <label>Área *</label>
-          {{ form.area }}
-        </div>
-        <div class="field col-6">
-          <label>Responsable *</label>
-          {{ form.responsable }}
-        </div>
-        <div class="field col-12">
-          <label>Fórmula</label>
-          {{ form.formula }}
-        </div>
-        <div class="field col-4">
-          <label>Valor Actual *</label>
-          {{ form.valor }}
-        </div>
-        <div class="field col-4">
-          <label>Meta *</label>
-          {{ form.meta }}
-        </div>
-        <div class="field col-4">
-          <label>Unidad</label>
-          {{ form.unidad }}
-        </div>
-        <div class="field col-6">
-          <label>Mejor al</label>
-          {{ form.mejor_al }}
-        </div>
-        <div class="field col-6">
-          <label>Tendencia</label>
-          {{ form.tendencia }}
-        </div>
-        <div class="field col-12" style="display:flex;gap:20px;align-items:center">
-          <label style="text-transform:none;font-size:13px;display:flex;align-items:center;gap:6px">
-            {{ form.incluir_historico }} Incluir en reporte histórico
-          </label>
-          <label style="text-transform:none;font-size:13px;display:flex;align-items:center;gap:6px">
-            {{ form.tabla_dinamica }} Tabla dinámica
-          </label>
-        </div>
-      </div>
-      <div class="stack" style="justify-content:flex-end;gap:8px;margin-top:16px">
-        <button type="button" class="btn" onclick="closeModal('modal-indicador')">Cancelar</button>
-        <button type="submit" class="btn ok">💾 Guardar</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-{% block header_scripts %}
-document.getElementById('newItem').onclick   = () => openModal('modal-indicador');
-document.getElementById('exportCsv').onclick  = () => window.location = '{% url "exportar_indicadores" %}';
-document.getElementById('quickReport').onclick = () => window.location = '{% url "exportar_indicadores" %}';
-{% endblock %}
+  window.addEventListener('sigcs:nuevo', openModal);
+  window.addEventListener('sigcs:exportar', () => { window.location = '{% url "exportar_indicadores" %}'; });
+})();
+</script>
 
 {% endblock %}

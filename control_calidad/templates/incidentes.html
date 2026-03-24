@@ -1,217 +1,180 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Incidentes | SIGCS{% endblock %}
-{% block nav_incidentes %}active{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/incidentes.css' %}">
 
-<div class="page-header">
-  <div>
-    <h2 class="page-title">⚠️ Incidentes</h2>
-    <p class="page-sub">Gestión y seguimiento de incidentes del sistema de calidad</p>
-  </div>
-  <button class="btn primary" onclick="openModal('modal-incidente')">➕ Nuevo Incidente</button>
-</div>
+<div class="inc-page">
 
-<!-- KPI Cards -->
-<div class="dashboard-grid" style="margin-bottom:20px">
-
-  <div class="card indicator-card {% if abiertos > 0 %}critical{% endif %}">
-    <div class="kpi">
-      <div>🔴</div>
-      <div style="flex:1">
-        <h3>Abiertos</h3>
-        <div class="v">{{ abiertos }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Sin iniciar investigación</div>
-  </div>
-
-  <div class="card indicator-card">
-    <div class="kpi">
-      <div>🔎</div>
-      <div style="flex:1">
-        <h3>En Investigación</h3>
-        <div class="v">{{ en_investigacion }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Bajo análisis activo</div>
+  <!-- KPI grid -->
+  <div class="inc-kpi-grid">
+    <article class="inc-kpi">
+      <div class="inc-kpi-head"><div class="inc-kpi-icon">📋</div><div class="inc-kpi-title">Total Incidentes</div></div>
+      <div class="inc-kpi-value">{{ total }}</div>
+      <div class="inc-kpi-note">Registrados</div>
+    </article>
+    <article class="inc-kpi inc-kpi-red">
+      <div class="inc-kpi-head"><div class="inc-kpi-icon">🚨</div><div class="inc-kpi-title">Abiertos</div></div>
+      <div class="inc-kpi-value">{{ abiertos }}</div>
+      <div class="inc-kpi-note">Requieren atención</div>
+    </article>
+    <article class="inc-kpi inc-kpi-orange">
+      <div class="inc-kpi-head"><div class="inc-kpi-icon">🔍</div><div class="inc-kpi-title">Sin Causa Raíz</div></div>
+      <div class="inc-kpi-value">{{ sin_causa }}</div>
+      <div class="inc-kpi-note">Sin diagnóstico</div>
+    </article>
+    <article class="inc-kpi inc-kpi-blue">
+      <div class="inc-kpi-head"><div class="inc-kpi-icon">⏱️</div><div class="inc-kpi-title">T. Respuesta Prom.</div></div>
+      <div class="inc-kpi-value">{{ tiempo_promedio }}h</div>
+      <div class="inc-kpi-note">Promedio de resolución</div>
+    </article>
   </div>
 
-  <div class="card indicator-card success">
-    <div class="kpi">
-      <div>✅</div>
-      <div style="flex:1">
-        <h3>Cerrados</h3>
-        <div class="v">{{ cerrados }}</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Resueltos y documentados</div>
-  </div>
-
-  <div class="card indicator-card">
-    <div class="kpi">
-      <div>⏱️</div>
-      <div style="flex:1">
-        <h3>T. Promedio</h3>
-        <div class="v">{{ tiempo_promedio }}h</div>
-      </div>
-    </div>
-    <div class="muted" style="font-size:12px;margin-top:8px">Tiempo promedio de resolución</div>
-  </div>
-
-</div>
-
-{% if sin_causa > 0 %}
-<div class="card" style="margin-bottom:16px;border-left:4px solid var(--danger);padding:14px 18px">
-  <strong style="color:var(--danger)">⚠️ Atención:</strong>
-  <span class="muted"> {{ sin_causa }} incidente{{ sin_causa|pluralize }} abierto{{ sin_causa|pluralize }}
-    sin causa raíz documentada.</span>
-</div>
-{% endif %}
-
-<!-- Filtros -->
-<form method="get">
-  <div class="toolbar" style="margin-bottom:16px">
-    <select name="estado" class="filter-select">
-      <option value="">Estado: Todos</option>
-      <option value="abierto"          {% if estado_f == 'abierto' %}selected{% endif %}>Abierto</option>
+  <!-- Toolbar / filtros -->
+  <form method="get">
+  <div class="inc-toolbar">
+    <button class="inc-btn inc-btn-primary" type="button" id="incOpenModalBtn">➕ Nuevo Incidente</button>
+    <select class="inc-select" name="estado">
+      <option value="">Todos los estados</option>
+      <option value="abierto" {% if estado_f == 'abierto' %}selected{% endif %}>Abierto</option>
       <option value="en_investigacion" {% if estado_f == 'en_investigacion' %}selected{% endif %}>En Investigación</option>
-      <option value="cerrado"          {% if estado_f == 'cerrado' %}selected{% endif %}>Cerrado</option>
+      <option value="cerrado" {% if estado_f == 'cerrado' %}selected{% endif %}>Cerrado</option>
     </select>
-    <select name="proceso" class="filter-select">
-      <option value="">Proceso: Todos</option>
+    <select class="inc-select" name="proceso">
+      <option value="">Todos los procesos</option>
       {% for p in procesos %}
-      <option value="{{ p.id }}" {% if proceso_f == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nombre }}</option>
+      <option value="{{ p.pk }}" {% if proceso_f == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.nombre }}</option>
       {% endfor %}
     </select>
-    <button type="submit" class="btn primary">Filtrar</button>
-    {% if estado_f or proceso_f %}
-    <a href="{% url 'incidentes' %}" class="btn">Limpiar</a>
-    {% endif %}
+    <button class="inc-btn inc-btn-ghost" type="submit">🔎 Filtrar</button>
+    <a href="{% url 'incidentes' %}" class="inc-btn inc-btn-ghost">✕ Limpiar</a>
+    <button class="inc-btn inc-btn-ghost" type="button" onclick="window.location='{% url 'exportar_incidentes' %}'">⬇️ Exportar</button>
   </div>
-</form>
+  </form>
 
-<!-- Tabla -->
-<div class="card">
-  <div class="data-table-controls">
-    <h3 style="margin:0">Listado de Incidentes</h3>
-    <a href="{% url 'exportar_incidentes' %}" class="btn ok">⬇️ Exportar CSV</a>
-  </div>
-
-  {% if incidentes %}
-  <div class="table-wrapper">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Título</th>
-          <th>Proceso</th>
-          <th>Estado</th>
-          <th>Causa Raíz</th>
-          <th>F. Reporte</th>
-          <th>F. Resolución</th>
-          <th>T. Respuesta</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for inc in incidentes %}
-        <tr>
-          <td>
-            <strong>{{ inc.titulo }}</strong>
-            {% if inc.descripcion %}
-            <br><span class="muted" style="font-size:12px">{{ inc.descripcion|truncatewords:8 }}</span>
-            {% endif %}
-          </td>
-          <td>{{ inc.proceso.nombre|default:"—" }}</td>
-          <td>
-            {% if inc.estado == 'abierto' %}
-            <span class="chip danger">Abierto</span>
-            {% elif inc.estado == 'en_investigacion' %}
-            <span class="chip warn">En Investigación</span>
-            {% else %}
-            <span class="chip ok">Cerrado</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if inc.causa_raiz %}
-            <span class="chip ok" title="{{ inc.causa_raiz }}">Documentada</span>
-            {% else %}
-            <span class="chip danger">Pendiente</span>
-            {% endif %}
-          </td>
-          <td>{{ inc.fecha_reporte|date:"d/m/Y" }}</td>
-          <td>{{ inc.fecha_resolucion|date:"d/m/Y"|default:"—" }}</td>
-          <td>
-            {% if inc.tiempo_respuesta_horas %}
-            {{ inc.tiempo_respuesta_horas }}h
-            {% else %}
-            <span class="muted">—</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <p class="empty-state">
-    No hay incidentes registrados{% if estado_f or proceso_f %} con los filtros aplicados{% endif %}.
-    {% if not estado_f and not proceso_f %}
-    Crea el primero desde el <a href="/admin/">panel de administración</a>.
-    {% endif %}
-  </p>
-  {% endif %}
-
-</div>
-
-<!-- Modal Nuevo Incidente -->
-<div class="modal-overlay" id="modal-incidente" style="display:{% if show_modal %}grid{% else %}none{% endif %}">
-  <div class="box" role="dialog" aria-modal="true" style="max-width:600px">
-    <div class="stack" style="justify-content:space-between;margin-bottom:14px">
-      <h3 style="margin:0">Nuevo Incidente</h3>
-      <button class="btn" onclick="closeModal('modal-incidente')" aria-label="Cerrar">✖</button>
+  <!-- Tabla -->
+  <div class="inc-card">
+    <div class="inc-card-head">
+      <h2 class="inc-card-title" style="margin:0">Registro de Incidentes</h2>
+      <div>{{ incidentes|length }} incidente{{ incidentes|length|pluralize:"s" }}</div>
     </div>
-    <form method="post">
-      {% csrf_token %}
-      <div class="row">
-        <div class="field col-12">
-          <label>Título *</label>
-          {{ form.titulo }}
-          {% if form.titulo.errors %}<span class="form-error">{{ form.titulo.errors.0 }}</span>{% endif %}
-        </div>
-        <div class="field col-12">
-          <label>Descripción</label>
-          {{ form.descripcion }}
-        </div>
-        <div class="field col-6">
-          <label>Proceso</label>
-          {{ form.proceso }}
-        </div>
-        <div class="field col-6">
-          <label>Estado</label>
-          {{ form.estado }}
-        </div>
-        <div class="field col-12">
-          <label>Causa Raíz</label>
-          {{ form.causa_raiz }}
-        </div>
-        <div class="field col-12">
-          <label>Fecha Resolución</label>
-          {{ form.fecha_resolucion }}
-        </div>
+
+    {% if incidentes %}
+    <div class="inc-table">
+      <div class="inc-thead">
+        <div>Título</div>
+        <div>Proceso</div>
+        <div>Estado</div>
+        <div>Causa Raíz</div>
+        <div>F. Reporte</div>
+        <div>F. Resolución</div>
       </div>
-      <div class="stack" style="justify-content:flex-end;gap:8px;margin-top:16px">
-        <button type="button" class="btn" onclick="closeModal('modal-incidente')">Cancelar</button>
-        <button type="submit" class="btn ok">💾 Guardar</button>
+
+      {% for inc in incidentes %}
+      <div class="inc-row">
+        <div class="inc-cell inc-strong">
+          {{ inc.titulo }}
+          {% if inc.descripcion %}
+          <div class="inc-muted">{{ inc.descripcion|truncatewords:10 }}</div>
+          {% endif %}
+        </div>
+        <div class="inc-cell">{{ inc.proceso.nombre|default:"—" }}</div>
+        <div class="inc-cell">
+          <span class="inc-pill {% if inc.estado == 'cerrado' %}inc-pill-green{% elif inc.estado == 'en_investigacion' %}inc-pill-blue{% else %}inc-pill-red{% endif %}">
+            {{ inc.get_estado_display }}
+          </span>
+        </div>
+        <div class="inc-cell">
+          {% if inc.causa_raiz %}
+          <span class="inc-muted" style="font-size:13px">{{ inc.causa_raiz|truncatewords:8 }}</span>
+          {% else %}
+          <span class="inc-pill inc-pill-orange">Pendiente</span>
+          {% endif %}
+        </div>
+        <div class="inc-cell inc-muted">{{ inc.fecha_reporte|date:"d/m/Y H:i" }}</div>
+        <div class="inc-cell inc-muted">{{ inc.fecha_resolucion|date:"d/m/Y H:i"|default:"—" }}</div>
       </div>
-    </form>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="text-align:center;color:#64748b;padding:40px">No se encontraron incidentes.</p>
+    {% endif %}
   </div>
+
+  <!-- Modal: Nuevo Incidente -->
+  <div class="inc-modal{% if show_modal %} is-open{% endif %}" id="incModal" aria-hidden="{% if show_modal %}false{% else %}true{% endif %}">
+    <div class="inc-backdrop" id="incBackdrop"></div>
+
+    <div class="inc-dialog" role="dialog" aria-modal="true" aria-labelledby="incModalTitle">
+      <div class="inc-dialog-header">
+        <h3 class="inc-dialog-title" id="incModalTitle">Nuevo Incidente</h3>
+        <button class="inc-close" type="button" id="incCloseBtn" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="inc-dialog-body">
+        <form method="post" id="incForm">
+          {% csrf_token %}
+          <div class="inc-form-grid">
+            <div class="inc-field inc-span-2">
+              <label class="inc-label">{{ form.titulo.label }}</label>
+              {{ form.titulo }}
+              {% if form.titulo.errors %}<span style="font-size:12px;color:#dc2626">{{ form.titulo.errors.0 }}</span>{% endif %}
+            </div>
+            <div class="inc-field inc-span-2">
+              <label class="inc-label">{{ form.descripcion.label }}</label>
+              {{ form.descripcion }}
+            </div>
+            <div class="inc-field">
+              <label class="inc-label">{{ form.proceso.label }}</label>
+              {{ form.proceso }}
+            </div>
+            <div class="inc-field">
+              <label class="inc-label">{{ form.estado.label }}</label>
+              {{ form.estado }}
+            </div>
+            <div class="inc-field inc-span-2">
+              <label class="inc-label">{{ form.causa_raiz.label }}</label>
+              {{ form.causa_raiz }}
+            </div>
+            <div class="inc-field inc-span-2">
+              <label class="inc-label">{{ form.fecha_resolucion.label }}</label>
+              {{ form.fecha_resolucion }}
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="inc-dialog-footer">
+        <button class="inc-btn inc-btn-ghost" type="button" id="incCancelBtn">Cancelar</button>
+        <button class="inc-btn inc-btn-success" type="submit" form="incForm">💾 Guardar Incidente</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-{% block header_scripts %}
-document.getElementById('newItem').onclick   = () => openModal('modal-incidente');
-document.getElementById('exportCsv').onclick  = () => window.location = '{% url "exportar_incidentes" %}';
-document.getElementById('quickReport').onclick = () => window.location = '{% url "exportar_incidentes" %}';
-{% endblock %}
+<script>
+(function () {
+  const openBtn  = document.getElementById('incOpenModalBtn');
+  const modal    = document.getElementById('incModal');
+  const closeBtn = document.getElementById('incCloseBtn');
+  const cancelBtn = document.getElementById('incCancelBtn');
+  const backdrop = document.getElementById('incBackdrop');
+
+  function openModal()  { modal.classList.add('is-open');    modal.setAttribute('aria-hidden', 'false'); }
+  function closeModal() { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true'); }
+
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  backdrop?.addEventListener('click', closeModal);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal(); });
+
+  window.addEventListener('sigcs:nuevo', openModal);
+  window.addEventListener('sigcs:exportar', () => { window.location = '{% url "exportar_incidentes" %}'; });
+})();
+</script>
 
 {% endblock %}
